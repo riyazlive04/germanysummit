@@ -35,6 +35,76 @@ export type Aggregate = {
   distribution: number[]; // counts per DIST_BUCKETS bucket
 };
 
+/**
+ * True before/after lift, computed from each person's score-history snapshots
+ * (not the live row, which is overwritten on retake). "Retook" = took the Reality
+ * Check 2+ times; lift compares their first take to their latest. Phase averages
+ * are pooled across every snapshot, so a person who took it pre-event AND end-of-
+ * day counts toward both phases - the honest before/after the room actually saw.
+ */
+export type ScoreLift = {
+  retook: number;
+  improved: number;
+  declined: number;
+  avgFirst: number | null;
+  avgLast: number | null;
+  avgDelta: number | null;
+  topGain: number | null;
+  phaseAverages: { session: string; avg: number | null; n: number }[];
+};
+
+const SESSION_ORDER = ["pre_event", "on_arrival", "end_of_day"] as const;
+
+export function computeLift(subs: DecodedSubmission[]): ScoreLift {
+  let improved = 0;
+  let declined = 0;
+  let firstSum = 0;
+  let lastSum = 0;
+  let retook = 0;
+  let topGain: number | null = null;
+  const phaseSum: Record<string, number> = {};
+  const phaseN: Record<string, number> = {};
+
+  for (const s of subs) {
+    const h = s.scoreHistory;
+    if (!h || h.length === 0) continue;
+
+    for (const snap of h) {
+      phaseSum[snap.session] = (phaseSum[snap.session] ?? 0) + snap.score;
+      phaseN[snap.session] = (phaseN[snap.session] ?? 0) + 1;
+    }
+
+    if (h.length >= 2) {
+      retook += 1;
+      const first = h[0].score;
+      const last = h[h.length - 1].score;
+      firstSum += first;
+      lastSum += last;
+      const gain = last - first;
+      if (gain > 0) improved += 1;
+      else if (gain < 0) declined += 1;
+      if (topGain === null || gain > topGain) topGain = gain;
+    }
+  }
+
+  const phaseAverages = SESSION_ORDER.map((session) => ({
+    session,
+    avg: phaseN[session] ? Math.round(phaseSum[session] / phaseN[session]) : null,
+    n: phaseN[session] ?? 0,
+  }));
+
+  return {
+    retook,
+    improved,
+    declined,
+    avgFirst: retook ? Math.round(firstSum / retook) : null,
+    avgLast: retook ? Math.round(lastSum / retook) : null,
+    avgDelta: retook ? Math.round((lastSum - firstSum) / retook) : null,
+    topGain,
+    phaseAverages,
+  };
+}
+
 function emptyTierCounts(): Record<Tier, number> {
   return {
     "Invisible to Recruiters": 0,

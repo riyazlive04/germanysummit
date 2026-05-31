@@ -30,6 +30,9 @@ export type DimScores = Record<Dimension, number>;
 /** A point-in-time score, for re-analysis delta tracking. */
 export type ScoreSnapshot = { score: number; at: string };
 
+/** A Reality Check take, tagged with the event phase, for before/after lift. */
+export type ReadinessSnapshot = { score: number; session: string; at: string };
+
 export type CvSubScores = {
   keywords: number; // 0..100 each
   results: number;
@@ -101,6 +104,7 @@ export type DecodedSubmission = Omit<
   Submission,
   | "answers"
   | "dimScores"
+  | "scoreHistory"
   | "cvGaps"
   | "cvHistory"
   | "linkedinReview"
@@ -109,6 +113,7 @@ export type DecodedSubmission = Omit<
 > & {
   answers: Answers | null;
   dimScores: DimScores | null;
+  scoreHistory: ReadinessSnapshot[] | null;
   cvGaps: CvGaps | null;
   cvHistory: ScoreSnapshot[] | null;
   linkedinReview: LinkedinGaps | null;
@@ -121,6 +126,7 @@ export function decodeSubmission(row: Submission): DecodedSubmission {
     ...row,
     answers: parse<Answers>(row.answers),
     dimScores: parse<DimScores>(row.dimScores),
+    scoreHistory: parse<ReadinessSnapshot[]>(row.scoreHistory),
     cvGaps: parse<CvGaps>(row.cvGaps),
     cvHistory: parse<ScoreSnapshot[]>(row.cvHistory),
     linkedinReview: parse<LinkedinGaps>(row.linkedinReview),

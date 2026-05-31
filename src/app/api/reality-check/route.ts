@@ -90,6 +90,13 @@ export async function POST(req: Request) {
     );
   }
 
+  // Append a phase-tagged snapshot to this person's history so the room view can
+  // show a true before/after lift (first take vs latest) across the day. Read the
+  // prior history off the existing row, then cap the trail to the last 20 takes.
+  const existing = await prisma.submission.findUnique({ where: { email } });
+  const priorHistory = existing ? decodeSubmission(existing).scoreHistory ?? [] : [];
+  const snapshot = { score: result.totalScore, session, at: new Date().toISOString() };
+
   const module1 = {
     answers: encode(answers),
     dimScores: encode(result.dimScores),
@@ -97,6 +104,7 @@ export async function POST(req: Request) {
     tier: result.tier,
     weakestDim: result.weakestDim,
     archetype: result.archetype,
+    scoreHistory: encode([...priorHistory, snapshot].slice(-20)),
   };
 
   let row;

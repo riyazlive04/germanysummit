@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Your Germany Readiness Check</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  :root{
+    --ink:#11201a; --muted:#6b7a72; --gold:#b8860b; --gold-bright:#d99c0a;
+    --green:#0f3d2e; --green-soft:#1c5a44; --line:#e3e7e3; --cream:#f7f5ef; --chip:#f0ede4;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI",-apple-system,Helvetica,Arial,sans-serif; color:var(--ink);
+    font-size:12px; line-height:1.55; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; line-height:1.14; margin:0;
+    break-after:avoid; page-break-after:avoid; }
+  .sec-head{ break-after:avoid; page-break-after:avoid; break-inside:avoid; }
+  .card,.callout,.qrbox,.grid2{ break-inside:avoid; page-break-inside:avoid; }
+  .eyebrow{ font-family:"Consolas","Courier New",monospace; text-transform:uppercase;
+    letter-spacing:.16em; font-size:9px; color:var(--gold-bright); font-weight:700; }
+  .muted{ color:var(--muted); }
+  ul{ margin:6px 0; padding-left:0; list-style:none; }
+  li{ position:relative; padding-left:17px; margin:5px 0; }
+  li::before{ content:""; position:absolute; left:2px; top:7px; width:5px; height:5px;
+    background:var(--gold); border-radius:50%; }
+
+  .cover{ background:var(--green); color:#f3efe2; border-radius:16px; padding:28px 30px; }
+  .cover h1{ color:#fff; font-size:30px; margin-top:9px; }
+  .cover p{ color:#cbd8d0; margin:11px 0 0; max-width:560px; }
+
+  .sec-head{ display:flex; align-items:baseline; gap:9px; border-bottom:2px solid var(--gold);
+    padding-bottom:5px; margin:20px 0 10px; }
+  .sec-head .n{ font-family:"Consolas",monospace; color:var(--gold); font-weight:700; font-size:12px; }
+  .sec-head h2{ font-size:18px; color:var(--green); }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card.cream{ background:var(--cream); }
+  .card h3{ color:var(--green); font-size:14px; margin-bottom:4px; }
+  .steps{ counter-reset:s; }
+  .steps li{ padding-left:30px; margin:9px 0; }
+  .steps li::before{ counter-increment:s; content:counter(s); background:var(--gold);
+    color:#fff; width:19px; height:19px; border-radius:50%; left:0; top:1px;
+    font-family:"Consolas",monospace; font-size:10px; font-weight:700; display:grid;
+    place-items:center; line-height:1; }
+  .qrbox{ text-align:center; border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .qrbox img{ width:150px; height:150px; }
+  .qrbox .u{ font-family:"Consolas",monospace; font-size:9px; color:var(--muted); margin-top:8px; }
+  .callout{ border-left:4px solid var(--gold); background:var(--cream); border-radius:0 10px 10px 0;
+    padding:12px 16px; margin-top:14px; }
+  .footer{ margin-top:20px; border-top:1px solid var(--line); padding-top:10px;
+    font-family:"Consolas",monospace; font-size:9px; letter-spacing:.06em; color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <span class="eyebrow">Germany Career Summit / 20 June 2026</span>
+    <h1>Find out how ready you really are for Germany</h1>
+    <p>A clear number, the exact gap holding you back, and a 90-day plan you can download.
+       Under 10 minutes, on your phone.</p>
+  </div>
+
+  <div class="sec-head"><span class="n">01</span><h2>What you will walk out with</h2></div>
+  <div class="grid2">
+    <ul>
+      <li>Your Germany Readiness Score, 0 to 100.</li>
+      <li>A 5-point picture of where you are strong and weak.</li>
+      <li>Your archetype: the kind of candidate you are right now.</li>
+    </ul>
+    <ul>
+      <li>An honest read of your CV and LinkedIn against what German recruiters look for.</li>
+      <li>A week-by-week 90-day plan you can download.</li>
+      <li>All of it saved to your email, to return to any time.</li>
+    </ul>
+  </div>
+
+  <div class="sec-head"><span class="n">02</span><h2>How to do it</h2></div>
+  <div class="grid2" style="grid-template-columns:1.4fr 1fr;align-items:center">
+    <ol class="steps" style="list-style:none;padding:0;margin:0">
+      <li><strong>Reality Check.</strong> Answer 10 honest questions, get your score and radar.</li>
+      <li><strong>CV &amp; LinkedIn Lab.</strong> Upload your CV, paste a German job you want, see what is missing.</li>
+      <li><strong>90-Day Roadmap.</strong> Get your plan, download it, start week 1.</li>
+    </ol>
+    <div class="qrbox">
+      <img src="assets/qr/reality-check.png" alt="Start here QR" />
+      <div class="u">germanysummit.sirahagents.com</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow" style="color:var(--green)">Two things that matter</span>
+    <ul style="margin:6px 0 0">
+      <li><strong>Use the same email every time</strong> so your results stay linked across the three tools.</li>
+      <li><strong>Be honest with the questions.</strong> No one is grading you. The score is only useful if your answers are.</li>
+    </ul>
+  </div>
+
+  <div class="callout" style="border-left-color:var(--green)">
+    <span class="eyebrow" style="color:var(--green)">One honest note</span>
+    <p style="margin:6px 0 0">This is a mirror and a map. It tells you where you stand and shows you the path.
+    Walking it is on you, and the accountability sprint with the coach is how most people actually finish.</p>
+  </div>
+
+  <div class="footer">Germany Readiness Suite / B2 Consultants / German Note / MMA Hall, Chennai</div>
+</body>
+</html>

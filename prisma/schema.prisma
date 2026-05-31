@@ -53,6 +53,10 @@ model Submission {
   tier       String?
   archetype  String?
   weakestDim String?
+  // Every Reality Check take appends a snapshot here, so the room view can show a
+  // TRUE before/after lift per person (first take vs latest) across the day, even
+  // though the live row is overwritten on each retake.
+  scoreHistory String? // JSON: [{ score, session, at }]
 
   // ── Module 2 — CV & LinkedIn Lab ────────────────────────────────────────
   cvAtsScore Int? //     0..100

@@ -8,6 +8,15 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["pdf-parse", "mammoth"],
   },
+  // Session-aware short links for event-day distribution (printed QR / WhatsApp).
+  // The path tags the phase automatically, no ?session= needed on the share.
+  async redirects() {
+    return [
+      { source: "/arrival", destination: "/reality-check?session=on_arrival", permanent: false },
+      { source: "/end-of-day", destination: "/reality-check?session=end_of_day", permanent: false },
+      { source: "/pre-event", destination: "/reality-check?session=pre_event", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

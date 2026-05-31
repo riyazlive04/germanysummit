@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PentagonRadar from "@/components/PentagonRadar";
 import { DIMENSIONS, type DimScores } from "@/lib/submission";
-import { DIST_BUCKETS, TIERS, type Aggregate } from "@/lib/aggregate";
+import { DIST_BUCKETS, TIERS, type Aggregate, type ScoreLift } from "@/lib/aggregate";
 import type { Tier } from "@/lib/scoring";
 import { formatISTTime } from "@/lib/datetime";
 
@@ -23,6 +23,7 @@ type RoomData = {
   sessionFilter: string | null;
   overall: Aggregate;
   bySession: Record<string, Aggregate>;
+  lift: ScoreLift;
 };
 
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
@@ -259,13 +260,16 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
             <Histogram distribution={overall.distribution} />
           </section>
 
-          {/* Before / after */}
+          {/* Before / after (who is in each phase right now) */}
           {data && (
             <BeforeAfter
               onArrival={data.bySession["on_arrival"]}
               endOfDay={data.bySession["end_of_day"]}
             />
           )}
+
+          {/* True per-person lift (same people, first take vs latest) */}
+          {data && data.lift.retook > 0 && <ScoreLiftPanel lift={data.lift} />}
         </div>
       )}
     </div>
@@ -378,6 +382,85 @@ function BeforeAfter({
           </div>
         </div>
         <MiniSession title="End of day" agg={endOfDay} highlight />
+      </div>
+    </section>
+  );
+}
+
+const PHASE_LABEL: Record<string, string> = {
+  pre_event: "Pre-event",
+  on_arrival: "On arrival",
+  end_of_day: "End of day",
+};
+
+/**
+ * The honest lift: same people, first take vs their latest, pooled across the
+ * day from snapshot history. Only shown once at least one person has retaken.
+ */
+function ScoreLiftPanel({ lift }: { lift: ScoreLift }) {
+  const up = lift.avgDelta != null && lift.avgDelta >= 0;
+  return (
+    <section className="panel-anchor p-7">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="font-display text-lg text-on-anchor">Score lift across the day</h3>
+        <span className="label-mono !text-gold">same people, first take vs latest</span>
+      </div>
+
+      <div className="mt-5 grid items-center gap-6 sm:grid-cols-[1fr_auto_1fr]">
+        <div className="text-center">
+          <span className="label-mono">Avg first take</span>
+          <div className="mt-1 font-display text-3xl tabular-nums text-on-anchor">
+            {lift.avgFirst ?? "-"}
+            {lift.avgFirst != null && (
+              <span className="ml-1 font-mono text-xs text-muted">/100</span>
+            )}
+          </div>
+        </div>
+        <div className="text-center">
+          <span className="label-mono">Δ lift</span>
+          <div
+            className="mt-1 font-display text-5xl tabular-nums"
+            style={{ color: up ? "var(--gold)" : "var(--muted)" }}
+          >
+            {lift.avgDelta != null ? `${up ? "+" : ""}${lift.avgDelta}` : "-"}
+          </div>
+        </div>
+        <div className="text-center">
+          <span className="label-mono">Avg latest take</span>
+          <div className="mt-1 font-display text-3xl tabular-nums text-gold">
+            {lift.avgLast ?? "-"}
+            {lift.avgLast != null && (
+              <span className="ml-1 font-mono text-xs text-muted">/100</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center text-sm text-on-anchor">
+        <span>
+          <strong className="font-display text-lg">{lift.retook}</strong> retook
+        </span>
+        <span>
+          <strong className="font-display text-lg text-gold">{lift.improved}</strong> improved
+        </span>
+        {lift.topGain != null && lift.topGain > 0 && (
+          <span>
+            biggest jump <strong className="font-display text-lg text-gold">+{lift.topGain}</strong>
+          </span>
+        )}
+      </div>
+
+      {/* Pooled phase averages from every snapshot */}
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        {lift.phaseAverages.map((p) => (
+          <div key={p.session} className="rounded-xl border border-[var(--hairline)] p-3 text-center">
+            <span className="label-mono">{PHASE_LABEL[p.session] ?? p.session}</span>
+            <div className="mt-1 font-display text-2xl tabular-nums text-on-anchor">
+              {p.avg ?? "-"}
+            </div>
+            <span className="font-mono text-[0.65rem] text-muted">{p.n} takes</span>
+          </div>
+        ))}
       </div>
     </section>
   );

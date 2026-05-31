@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Germany Readiness Suite - Operator Guide</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root{
+    --ink:#11201a; --ink-soft:#3a4a42; --muted:#6b7a72;
+    --gold:#b8860b; --gold-bright:#d99c0a; --green:#0f3d2e; --green-soft:#1c5a44;
+    --line:#e3e7e3; --bg:#ffffff; --cream:#f7f5ef; --chip:#f0ede4;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Segoe UI",-apple-system,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); font-size:11.2px; line-height:1.5;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; line-height:1.15; margin:0;
+    break-after:avoid; page-break-after:avoid; }
+  /* Never strand a section title at the bottom of a page: keep the heading with
+     the content that follows it, and keep small blocks from splitting. Large
+     sections may still flow across pages between their inner blocks. */
+  .sec-head{ break-after:avoid; page-break-after:avoid; break-inside:avoid; page-break-inside:avoid; }
+  .sec-head + *{ break-before:avoid; page-break-before:avoid; }
+  .eyebrow{ font-family:"Consolas","Courier New",monospace; text-transform:uppercase;
+    letter-spacing:.16em; font-size:8.4px; color:var(--gold); font-weight:700; }
+  .muted{ color:var(--muted); }
+  a{ color:var(--green-soft); text-decoration:none; }
+  strong{ color:var(--ink); }
+
+  /* Cover */
+  .cover{ background:var(--green); color:#f3efe2; border-radius:16px; padding:30px 32px;
+    margin-bottom:22px; position:relative; overflow:hidden; }
+  .cover .eyebrow{ color:var(--gold-bright); }
+  .cover h1{ color:#fff; font-size:33px; margin-top:10px; }
+  .cover p{ color:#cbd8d0; max-width:520px; margin:12px 0 0; font-size:11.6px; }
+  .cover .meta{ margin-top:18px; display:flex; gap:26px; flex-wrap:wrap; }
+  .cover .meta div span{ display:block; }
+  .cover .meta .k{ font-family:"Consolas",monospace; font-size:7.8px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--gold-bright); }
+  .cover .meta .v{ font-size:12px; color:#fff; margin-top:2px; }
+  .barcode{ position:absolute; right:-40px; top:-40px; width:180px; height:180px;
+    border:18px solid rgba(216,156,10,.16); border-radius:50%; }
+
+  section{ margin:0 0 16px; }
+  .sec-head{ display:flex; align-items:baseline; gap:10px; border-bottom:2px solid var(--gold);
+    padding-bottom:5px; margin-bottom:11px; }
+  .sec-head .n{ font-family:"Consolas",monospace; color:var(--gold); font-size:11px; font-weight:700; }
+  .sec-head h2{ font-size:17px; color:var(--green); }
+
+  ul{ margin:6px 0; padding-left:0; list-style:none; }
+  li{ position:relative; padding-left:15px; margin:4px 0; }
+  li::before{ content:""; position:absolute; left:2px; top:6px; width:5px; height:5px;
+    background:var(--gold); border-radius:50%; }
+  li.dash::before{ background:var(--green-soft); }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+
+  .card{ border:1px solid var(--line); border-radius:12px; padding:13px 15px; background:#fff;
+    break-inside:avoid; page-break-inside:avoid; }
+  .callout,.qrrow,table,.grid2,.grid3{ break-inside:avoid; page-break-inside:avoid; }
+  .card.cream{ background:var(--cream); }
+  .card h3{ font-size:13.5px; color:var(--green); margin-bottom:4px; }
+  .tag{ display:inline-block; font-family:"Consolas",monospace; font-size:7.6px; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--gold); background:var(--chip);
+    border-radius:5px; padding:2px 6px; margin-bottom:6px; }
+
+  .shot{ border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#0a0f0d;
+    margin-top:9px; }
+  .shot img{ width:100%; display:block; }
+  .shot .cap{ font-family:"Consolas",monospace; font-size:7.6px; letter-spacing:.08em;
+    color:#9fb0a6; padding:5px 8px; background:#0a0f0d; }
+
+  .feature{ display:grid; grid-template-columns:1.05fr .95fr; gap:16px; align-items:start;
+    page-break-inside:avoid; margin-bottom:14px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:10.4px; }
+  th,td{ text-align:left; padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ font-family:"Consolas",monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); }
+  td .t{ font-weight:700; color:var(--green); }
+
+  .callout{ border-left:4px solid var(--gold); background:var(--cream); border-radius:0 10px 10px 0;
+    padding:11px 15px; }
+  .callout.green{ border-left-color:var(--green); }
+
+  .qrrow{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
+  .qrrow .qr{ border:1px solid var(--line); border-radius:12px; padding:12px 8px; background:#fff; }
+  .qrrow .qr img{ width:118px; height:118px; }
+  .qrrow .qr .ph{ font-size:12px; font-weight:700; color:var(--green); margin-bottom:6px;
+    font-family:Georgia,serif; }
+  .qrrow .qr .url{ font-family:"Consolas",monospace; font-size:7.6px; color:var(--muted);
+    margin-top:6px; word-break:break-all; }
+
+  .pill{ display:inline-block; background:var(--green); color:#fff; font-family:"Consolas",monospace;
+    font-size:8px; letter-spacing:.08em; padding:3px 8px; border-radius:20px; }
+
+  .page-break{ page-break-before:always; }
+  .check li::before{ content:"\2713"; background:none; color:var(--gold); font-weight:700;
+    font-size:11px; top:1px; left:0; }
+  .footer{ margin-top:18px; border-top:1px solid var(--line); padding-top:9px;
+    font-family:"Consolas",monospace; font-size:8px; letter-spacing:.06em; color:var(--muted);
+    display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+  <div class="cover">
+    <div class="barcode"></div>
+    <span class="eyebrow">Operator Guide / B2 Consultants / German Note</span>
+    <h1>Germany Readiness Suite</h1>
+    <p>The one-day web app that turns "Am I ready for Germany?" into a real number,
+       a clear gap, and a 90-day plan, then hands the coach a warm conversation.
+       This guide is for Ameen and the team.</p>
+    <div class="meta">
+      <div><span class="k">Event</span><span class="v">Germany Career Summit</span></div>
+      <div><span class="k">Date</span><span class="v">20 June 2026, Chennai</span></div>
+      <div><span class="k">Live at</span><span class="v">germanysummit.sirahagents.com</span></div>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>What it is, and why it exists</h2></div>
+    <div class="grid2">
+      <div>
+        <ul>
+          <li><strong>One link, three tools, one score.</strong> Every attendee gets a personal readiness profile keyed to their email.</li>
+          <li><strong>The objective:</strong> move each person from inspiration to action while they are still in the room, in under 10 minutes.</li>
+          <li>It does not ask for stage time. It powers the blocks already on the agenda.</li>
+          <li>It feeds the back end: the app exposes the gap, the accountability sprint closes it.</li>
+        </ul>
+      </div>
+      <div class="callout green">
+        <span class="eyebrow" style="color:var(--green)">The golden rule</span>
+        <p style="margin:6px 0 0">The app <strong>diagnoses</strong>. The coach and the sprint <strong>deliver</strong>.
+        It never writes a CV or hands over the finished answer. It shows the gap, then points to you.
+        This is by design, and it protects the offer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>Why it earns its place next to the paper kit</h2></div>
+    <p class="muted" style="margin:0 0 9px">The printed Worksheet and 90-Day Visual Roadmap stay. The app only does what paper cannot.</p>
+    <div class="grid2">
+      <div class="card cream"><h3>Compute</h3>A real, consistent 0 to 100 score and a five-point radar, the same way for every person.</div>
+      <div class="card cream"><h3>Aggregate</h3>The whole room on one screen, live: average readiness, gaps everyone shares, the shift across the day.</div>
+      <div class="card cream"><h3>Personalize at scale</h3>A CV read and a 90-day plan tailored to each person, 300 at once, in minutes.</div>
+      <div class="card cream"><h3>Follow home</h3>Results keyed to email so people can return to them, and the lead is enriched for follow-up.</div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="n">03</span><h2>The three tools</h2></div>
+
+    <div class="feature">
+      <div>
+        <span class="tag">Module 01 / Reality Check</span>
+        <h3 style="font-size:14px;color:var(--green)">A number they cannot argue with</h3>
+        <ul>
+          <li>10 honest questions across 5 dimensions: Profile, Strategy, German &amp; Skills, Mindset, 90-Day Plan.</li>
+          <li>Gives a 0 to 100 Germany Readiness Score, a pentagon radar, their archetype, and the one gap holding them back.</li>
+          <li>Scored on our server, so the room view and the record are the source of truth.</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/shots/reality-check.png" alt="Reality Check" /><div class="cap">germanysummit.sirahagents.com/reality-check</div></div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <span class="tag">Module 02 / CV &amp; LinkedIn Lab</span>
+        <h3 style="font-size:14px;color:var(--green)">What a German recruiter sees in 8 seconds</h3>
+        <ul>
+          <li>Upload a CV as PDF or Word, paste the German job they want.</li>
+          <li>Returns an ATS match score, a recruiter-style keyword checklist, German-format checks, and the weak bullets, named not rewritten.</li>
+          <li>A second tab does the same for their LinkedIn profile.</li>
+          <li>Re-analyze after fixes and it shows the lift from the last attempt.</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/shots/cv-lab.png" alt="CV and LinkedIn Lab" /><div class="cap">germanysummit.sirahagents.com/cv-lab</div></div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <span class="tag">Module 03 / 90-Day Roadmap</span>
+        <h3 style="font-size:14px;color:var(--green)">Twelve weeks, front-loaded on the weak spots</h3>
+        <ul>
+          <li>Builds a week-by-week plan from their score, front-loaded on their two weakest dimensions.</li>
+          <li>Mirrors the physical 90-Day Visual Roadmap, and points to the Roadmap Reveal and the sprint.</li>
+          <li>Downloadable as a PDF. Built once per person, so it stays their plan unless the team re-enables it.</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/shots/roadmap.png" alt="90-Day Roadmap" /><div class="cap">germanysummit.sirahagents.com/roadmap</div></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="page-break">
+    <div class="sec-head"><span class="n">04</span><h2>How it powers your day</h2></div>
+    <p class="muted" style="margin:0 0 8px">The suite slots into the agenda. It does not add to it.</p>
+    <table>
+      <thead><tr><th>Time</th><th>Agenda block</th><th>What the app powers</th></tr></thead>
+      <tbody>
+        <tr><td>10:00-12:30</td><td><span class="t">Reality Check + Live CV Transformation</span></td><td>Reality Check score, the live room screen, and the CV &amp; LinkedIn diagnosis.</td></tr>
+        <tr><td>12:30-1:30</td><td>Lunch and networking</td><td>People retake on arrival, the room screen fills up.</td></tr>
+        <tr><td>1:30-3:00</td><td><span class="t">Roadmap Reveal + Success Stories</span></td><td>The 90-Day Roadmap, and the lead-in to the accountability sprint.</td></tr>
+        <tr><td>3:00-4:00</td><td><span class="t">Q&amp;A + Personal Action Plan</span></td><td>End-of-day re-score and the score lift across the day on the big screen.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:11px">
+      <span class="eyebrow">How it feeds the sprint</span>
+      <p style="margin:6px 0 0">Free content brings them in. The 999 summit is the front end. The app makes the gap personal and undeniable,
+      which is the natural set-up for the <strong>accountability sprint</strong> on the back end. When someone is rattled by their score, that is the cue.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="n">05</span><h2>Running it: three moments, three links</h2></div>
+    <ul>
+      <li>Each moment has a clean link. Share it as a link, or as the QR code below, whichever fits the screen or the message.</li>
+      <li>The link decides the phase, not the clock. The short links tag it automatically.</li>
+      <li class="dash">To capture a real before/after, turn on <strong>"Allow everyone to retake"</strong> in admin during the arrival and end-of-day pulses, so people can score again with the same email.</li>
+    </ul>
+    <div class="qrrow" style="margin-top:10px">
+      <div class="qr">
+        <div class="ph">Pre-event</div>
+        <img src="assets/qr/reality-check.png" alt="Pre-event QR" />
+        <div class="url">/reality-check</div>
+      </div>
+      <div class="qr">
+        <div class="ph">On arrival</div>
+        <img src="assets/qr/arrival.png" alt="On arrival QR" />
+        <div class="url">/arrival</div>
+      </div>
+      <div class="qr">
+        <div class="ph">End of day</div>
+        <img src="assets/qr/end-of-day.png" alt="End of day QR" />
+        <div class="url">/end-of-day</div>
+      </div>
+    </div>
+    <p class="muted" style="text-align:center;margin-top:8px;font-size:9.6px">Print these on the registration desk and the closing slide. Each one tags its phase on its own.</p>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="sec-head"><span class="n">06</span><h2>The big screen: the Room, live</h2></div>
+    <span class="tag">germanysummit.sirahagents.com/room</span>
+    <p class="muted" style="margin:5px 0 9px">Open this on the big display during the live blocks. It refreshes on its own.</p>
+    <div class="grid2">
+      <ul>
+        <li><strong>Average readiness</strong>, the room radar, tier breakdown, archetypes, and a score distribution.</li>
+        <li>Tabs filter the view by <strong>Pre-event, On arrival, End of day</strong>.</li>
+      </ul>
+      <ul>
+        <li><strong>Score lift across the day:</strong> same people, first take vs latest. The honest before/after the room actually moved.</li>
+        <li>Use it on stage: "this room's average is 54, and the number one gap is Strategy."</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7 admin -->
+  <section>
+    <div class="sec-head"><span class="n">07</span><h2>Admin controls</h2></div>
+    <span class="tag">germanysummit.sirahagents.com/room/records, opens with the admin key</span>
+    <p class="muted" style="margin:5px 0 9px">Your private control room. Every entry shows name, email, phone, session, score, tier, archetype, the modules they finished, and the time in IST.</p>
+    <div class="grid2">
+      <div class="card cream">
+        <h3>Retake control</h3>
+        <ul>
+          <li><strong>Allow or lock one person.</strong> A finished Reality Check locks that person by default, matched on email and on phone.</li>
+          <li><strong>Allow everyone to retake.</strong> One global switch. Turn it on for the arrival and end-of-day pulses so the room can score again, then turn it back off.</li>
+          <li><strong>Reset all locks.</strong> Clears everything back to a fresh state.</li>
+        </ul>
+      </div>
+      <div class="card cream">
+        <h3>Roadmaps and records</h3>
+        <ul>
+          <li><strong>Unlock a new roadmap.</strong> Plans are one per person. Grant a regenerate when someone genuinely needs a fresh one. It is used up on the next build.</li>
+          <li><strong>Delete a record.</strong> Remove a test entry or a duplicate.</li>
+          <li class="dash">Treat the admin key like a password. Keep it off the screen and out of public hands.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="sec-head"><span class="n">08</span><h2>What the team must provide: the AI key</h2></div>
+    <div class="grid2">
+      <div>
+        <ul>
+          <li>The CV diagnosis, the LinkedIn read, and the 90-day roadmap are generated by <strong>Anthropic's Claude AI</strong>.</li>
+          <li>B2 must provide an <strong>Anthropic API key</strong> and pay for usage. It is a paid, pay-as-you-go service, billed by Anthropic, not by us.</li>
+          <li>The Reality Check score works without it. The three AI tools will not run without a funded key.</li>
+        </ul>
+        <p style="margin:8px 0 0"><strong>Set it up once:</strong></p>
+        <ul class="check">
+          <li>Create an account at console.anthropic.com and add a billing method.</li>
+          <li>Create an API key.</li>
+          <li>Paste it into the app hosting (Vercel) as <span class="pill">ANTHROPIC_API_KEY</span> and redeploy.</li>
+        </ul>
+      </div>
+      <div class="callout green">
+        <span class="eyebrow" style="color:var(--green)">Rough cost for the day</span>
+        <p style="margin:6px 0 0">Each analysis costs a few US cents. For a 300-person event where people run the CV Lab and the roadmap,
+        budget roughly <strong>USD 30 to 60</strong> (about 2,500 to 5,000 rupees), with a buffer. Built-in prompt caching keeps this low.</p>
+        <p style="margin:7px 0 0" class="muted">Keep a small top-up on the account so it never runs dry mid-event. Treat the key like a password.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="sec-head"><span class="n">09</span><h2>People can find their own results</h2></div>
+    <div class="feature">
+      <div>
+        <ul>
+          <li>Anyone can look up everything they did, using the same email, at <strong>/my-results</strong>.</li>
+          <li>Score, radar, CV and LinkedIn reads, and their 90-day plan, all in one place.</li>
+          <li>Good for the WhatsApp follow-up: "open your results, here is your next step."</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/shots/my-results.png" alt="My Results" /><div class="cap">germanysummit.sirahagents.com/my-results</div></div>
+    </div>
+  </section>
+
+  <!-- checklist -->
+  <section>
+    <div class="sec-head"><span class="n">10</span><h2>Event-day checklist</h2></div>
+    <div class="grid2">
+      <ul class="check">
+        <li>Anthropic key funded and live in the hosting environment.</li>
+        <li>Strong admin key set, shared only with the team.</li>
+        <li>Pre-event link sent in the reminder email.</li>
+      </ul>
+      <ul class="check">
+        <li>Arrival and end-of-day QR codes printed and on the closing slide.</li>
+        <li>"Allow everyone to retake" turned on for the arrival and end-of-day pulses.</li>
+        <li>The Room screen open on the big display during the live blocks.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>Germany Readiness Suite / B2 Consultants / German Note</span>
+    <span>Operator guide / for Ameen and team</span>
+  </div>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
-import { aggregate } from "@/lib/aggregate";
+import { aggregate, computeLift } from "@/lib/aggregate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,5 +55,8 @@ export async function GET(req: Request) {
     sessionFilter: validFilter ?? null,
     overall: aggregate(scoped),
     bySession,
+    // True before/after lift, computed from per-person snapshots across ALL rows
+    // (independent of the session filter, since it spans the whole day).
+    lift: computeLift(all),
   });
 }
