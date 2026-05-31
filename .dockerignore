@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log
+Dockerfile
+.dockerignore
+.env
+.env.local
+.env*.local
+*.md
+prisma/*.db
+prisma/*.db-journal
+.vscode
+coverage
+reference

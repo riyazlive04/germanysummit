@@ -1,0 +1,84 @@
+// Germany Career Summit — Readiness Suite
+//
+// ONE Submission profile per email. The three modules (Reality Check, CV &
+// LinkedIn Lab, 90-Day Roadmap) update the SAME row so results compound.
+// `session` + createdAt/updatedAt are the seam for later "Guided Mode" /
+// accountability-sprint re-scoring over time — do not split this into per-module
+// tables.
+//
+// Local dev: SQLite. Production: switch `provider` to "postgresql" and point
+// DATABASE_URL at Postgres.
+//
+// NOTE on the JSON fields: SQLite's Prisma connector does not support the native
+// `Json` type, so the structured columns (answers, dimScores, cvGaps, roadmap)
+// are stored as JSON-encoded `String`. This keeps ONE schema working on both
+// SQLite (local) and Postgres (prod). Application code never touches the raw
+// strings — it goes through the typed (de)serialization helpers in
+// src/lib/submission.ts, which read/write real objects. On Postgres these can be
+// flipped to native `Json` later with no application-code changes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection (PgBouncer) for the serverless app runtime.
+  url       = env("DATABASE_URL")
+  // Direct connection for `prisma db push` / `migrate` (no pooler).
+  directUrl = env("DIRECT_URL")
+}
+
+model Submission {
+  id        String  @id @default(cuid())
+  name      String?
+  email     String  @unique
+  phone     String?
+  phoneNorm String? // last-10-digit normalized phone, for duplicate / retake detection
+  source    String?
+
+  // pre_event | on_arrival | end_of_day  — the before/after seam for the room view
+  session String @default("pre_event")
+
+  // Retake gating: a completed Reality Check locks the person (by email OR
+  // phoneNorm). Admin can flip this true to grant a one-shot retake; it is
+  // consumed (reset to false) on the next successful submission. A global
+  // override lives on AppConfig.allowAllRetakes.
+  retakeAllowed Boolean @default(false)
+
+  // ── Module 1 — Reality Check ────────────────────────────────────────────
+  answers    String? // JSON: 10 ints (0..3), index = question order
+  dimScores  String? // JSON: { Profile, Strategy, "German & Skills", Mindset, "90-Day Plan" } each 0..1
+  totalScore Int? //     0..100  (the Germany Readiness Score)
+  tier       String?
+  archetype  String?
+  weakestDim String?
+
+  // ── Module 2 — CV & LinkedIn Lab ────────────────────────────────────────
+  cvAtsScore Int? //     0..100
+  cvGaps     String? // JSON: rubric subScores, jdChecklist, weakBullets, germanChecklist, etc.
+  cvHistory  String? // JSON: [{ score, at }] - for re-analysis delta tracking
+
+  // LinkedIn Optimizer (second tab of Module 2)
+  linkedinScore   Int? //    0..100  (profile visibility)
+  linkedinReview  String? // JSON: subScores, headlineRead, missingKeywords[], sectionFlags[], topFixes[]
+  linkedinHistory String? // JSON: [{ score, at }]
+
+  // ── Module 3 — 90-Day Roadmap ───────────────────────────────────────────
+  roadmap String? // JSON: week-by-week structure (phases -> weeks -> actions)
+  // The roadmap is one-shot: once built it can't be regenerated unless an admin
+  // grants this (consumed on the next regeneration).
+  roadmapRegenAllowed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phoneNorm])
+}
+
+// Single-row app configuration toggled by the admin from /room/records.
+model AppConfig {
+  id              String   @id @default("singleton")
+  allowAllRetakes Boolean  @default(false) // global override: let anyone retake
+  updatedAt       DateTime @updatedAt
+}

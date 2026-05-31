@@ -1,0 +1,282 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * GERMANY READINESS SUITE - design system v2 ("Bold contemporary").
+ *
+ * Deep ink-green base, deep-green color blocks as structure, GOLD reserved as
+ * the precise spark (CTAs + key data), warm off-white text. German palette:
+ * black · green · gold. Token names from v1 are preserved so every component
+ * keeps working; values and usage are what changed.
+ */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0a0f0d; /* near-black, faint green undertone */
+  --surface: #111a16; /* cards */
+  --surface-2: #18241e; /* raised / hover */
+
+  --anchor: #0f3d2e; /* deep green - primary brand block */
+  --anchor-hi: #1b5a43; /* lighter green for hover/accents */
+  --on-anchor: #f5f2ea; /* text on the green block */
+
+  --gold: #f0b429; /* confident gold spark */
+  --gold-soft: #f7cf6b;
+  --gold-deep: #c98a11;
+  --gold-ink: #0a0f0d; /* text that sits ON gold */
+
+  --green: #36b37e; /* bright success (distinct from anchor) */
+  --red: #e0533d; /* problems / warnings */
+
+  --text: #f5f2ea; /* warm off-white */
+  --muted: #aab7ae; /* secondary text - brightened for contrast on near-black */
+
+  --line: rgba(245, 242, 234, 0.1);
+  --hairline: var(--line); /* v1 alias */
+  --gold-glow: rgba(240, 180, 41, 0.12);
+  --header-bg: rgba(10, 15, 13, 0.78);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+/* LIGHT - warm paper, green ink, gold spark. Secondary mode. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f6f4ec;
+  --surface: #ffffff;
+  --surface-2: #efeadd;
+
+  --anchor: #0f3d2e;
+  --anchor-hi: #15523c;
+  --on-anchor: #f5f2ea;
+
+  --gold: #b5830e; /* deepened so it reads on light */
+  --gold-soft: #d8a93a;
+  --gold-deep: #8a6309;
+  --gold-ink: #14201a;
+
+  --green: #1e8e5a;
+  --red: #c0392b;
+
+  --text: #14201a; /* dark green-ink */
+  --muted: #4f5d54; /* secondary text - deepened for contrast on paper */
+
+  --line: rgba(20, 32, 26, 0.12);
+  --hairline: var(--line);
+  --gold-glow: rgba(181, 131, 14, 0.12);
+  --header-bg: rgba(246, 244, 236, 0.82);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-hanken), system-ui, sans-serif;
+    font-size: 16px;
+    font-weight: 460;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-fraunces), serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  ::selection {
+    background: var(--gold);
+    color: var(--gold-ink);
+  }
+
+  /* Tabular, confident numerals everywhere they matter */
+  .nums {
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Eyebrow - small kicker label. Tightened tracking + brighter gold for
+     legibility while staying a restrained accent. */
+  .eyebrow {
+    font-family: var(--font-space-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  /* v1 alias kept so existing markup doesn't break */
+  .label-mono {
+    font-family: var(--font-space-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* Surfaces */
+  .card {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* Deep-green color block - the structural signature of the bold theme */
+  .panel-anchor {
+    background-color: var(--anchor);
+    color: var(--on-anchor);
+    border-radius: var(--radius);
+  }
+  .panel-anchor .label-mono,
+  .panel-anchor .eyebrow {
+    color: var(--gold-soft);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.18s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .btn-gold {
+    background-color: var(--gold);
+    color: var(--gold-ink);
+    border-radius: 999px;
+    font-weight: 700;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.18s ease,
+      background-color 0.15s ease;
+  }
+  .btn-gold:hover {
+    background-color: var(--gold-soft);
+    box-shadow: 0 16px 38px -18px rgba(240, 180, 41, 0.7);
+    transform: translateY(-1px);
+  }
+  .btn-anchor {
+    background-color: var(--anchor);
+    color: var(--on-anchor);
+    border: 1px solid var(--anchor-hi);
+  }
+  .btn-anchor:hover {
+    background-color: var(--anchor-hi);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover {
+    color: var(--text);
+    border-color: var(--gold);
+  }
+
+  /* Chips / pills */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.75rem;
+  }
+
+  /* Inputs */
+  .input {
+    background-color: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.92rem;
+    color: var(--text);
+    outline: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+  .input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-glow);
+  }
+}
+
+/* Restrained, purposeful motion - one orchestrated reveal. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
+
+/* The B² logo is white-on-transparent; flip it dark on the light theme. */
+:root[data-theme="light"] .brand-logo {
+  filter: invert(1) brightness(0.16);
+}
+
+/* Print: used for "Download as PDF" (Save as PDF). Hide app chrome, keep the
+ * brand colours, and only show the printable region. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: var(--bg) !important;
+  }
+  .animate-rise {
+    animation: none !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
+.print-only {
+  display: none;
+}
