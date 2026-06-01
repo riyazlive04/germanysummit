@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Reality Check - Questions for sign-off</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  :root{
+    --ink:#14201a; --muted:#5b6960; --gold:#8a6309; --green:#0f3d2e; --line:#e3e7e3; --cream:#f7f5ef;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI",Helvetica,Arial,sans-serif; color:var(--ink);
+    font-size:9.4px; line-height:1.4; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; margin:0; }
+  .cover{ background:var(--green); color:#f3efe2; border-radius:11px; padding:14px 18px;
+    display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; }
+  .cover .eyebrow{ font-family:"Consolas",monospace; text-transform:uppercase; letter-spacing:.16em;
+    font-size:7px; color:#e0b94a; font-weight:700; }
+  .cover h1{ color:#fff; font-size:21px; margin-top:4px; }
+  .cover .key{ text-align:right; font-family:"Consolas",monospace; font-size:7.4px; color:#cbd8d0; line-height:1.5; }
+  .cover .key b{ color:#e0b94a; }
+  .intro{ font-size:9px; color:var(--muted); margin:0 0 11px; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px 16px; }
+  .dim{ break-inside:avoid; }
+  .dim-h{ display:flex; align-items:baseline; gap:7px; border-bottom:1.5px solid var(--gold);
+    padding-bottom:3px; margin-bottom:5px; }
+  .dim-h .n{ font-family:"Consolas",monospace; color:var(--gold); font-weight:700; font-size:8px; }
+  .dim-h h2{ font-size:12px; color:var(--green); }
+  .q{ margin:0 0 6px; }
+  .q .p{ font-weight:700; color:var(--ink); margin-bottom:2px; }
+  .q .p .qn{ font-family:"Consolas",monospace; color:var(--gold); margin-right:4px; }
+  .opt{ display:flex; gap:5px; padding:1px 0; }
+  .opt .l{ font-family:"Consolas",monospace; font-weight:700; color:var(--green); width:11px; flex:0 0 11px; }
+  .opt .pts{ margin-left:auto; font-family:"Consolas",monospace; color:var(--muted); font-size:7.6px; }
+  .signoff{ margin-top:13px; border-top:1px solid var(--line); padding-top:9px; display:flex;
+    justify-content:space-between; align-items:flex-end; gap:20px; }
+  .signoff .note{ font-size:8.4px; color:var(--muted); max-width:62%; }
+  .signoff .sign{ flex:1; }
+  .signoff .line{ border-bottom:1px solid var(--ink); height:22px; }
+  .signoff .cap{ font-family:"Consolas",monospace; font-size:7px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); margin-top:3px; }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div>
+      <span class="eyebrow">Reality Check / for review and sign-off</span>
+      <h1>The 10 questions, by dimension</h1>
+    </div>
+    <div class="key">
+      5 dimensions / 2 questions each<br>
+      Scoring: <b>A=3</b> · B=2 · C=1 · <b>D=0</b><br>
+      (best to weakest, top to bottom)
+    </div>
+  </div>
+
+  <p class="intro">These are fresh proxy questions that score the same five readiness dimensions, written so they do
+  not copy your live worksheet (attendees still answer the real worksheet on the day). On the event day the room can
+  see, live, what percentage chose A, B, C or D for each question. Please confirm the dimensions and scoring match how
+  you define readiness.</p>
+
+  <div class="grid">
+
+    <div class="dim">
+      <div class="dim-h"><span class="n">01</span><h2>Profile</h2></div>
+      <div class="q">
+        <div class="p"><span class="qn">Q1</span>Your professional profile, in one line, is closest to:</div>
+        <div class="opt"><span class="l">A</span><span>A specific problem I solve for companies</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>My job title and years of experience</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>A long list of everything I have done</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I have not really defined it</span><span class="pts">0</span></div>
+      </div>
+      <div class="q">
+        <div class="p"><span class="qn">Q2</span>If a recruiter scanned your CV for 8 seconds, what would catch them?</div>
+        <div class="opt"><span class="l">A</span><span>A clear result, backed by a number, matching the role</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>A relevant title and solid experience</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>A wall of responsibilities and tools</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>Honestly, nothing stands out</span><span class="pts">0</span></div>
+      </div>
+    </div>
+
+    <div class="dim">
+      <div class="dim-h"><span class="n">02</span><h2>Strategy</h2></div>
+      <div class="q">
+        <div class="p"><span class="qn">Q3</span>Right now, your German job search looks most like:</div>
+        <div class="opt"><span class="l">A</span><span>A targeted system: chosen companies, direct outreach, a routine</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>Steady applying, mostly through job portals</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>Bursts of effort when motivation strikes</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I have not really started</span><span class="pts">0</span></div>
+      </div>
+      <div class="q">
+        <div class="p"><span class="qn">Q4</span>When you want to reach a German company, your default move is:</div>
+        <div class="opt"><span class="l">A</span><span>Find and message the right person directly</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>Apply, and also try to find a contact</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>Apply through the portal and wait</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I do not really reach companies directly</span><span class="pts">0</span></div>
+      </div>
+    </div>
+
+    <div class="dim">
+      <div class="dim-h"><span class="n">03</span><h2>German &amp; Skills</h2></div>
+      <div class="q">
+        <div class="p"><span class="qn">Q5</span>On German language plus market-ready technical skills, you are:</div>
+        <div class="opt"><span class="l">A</span><span>B2+ and I can prove my skills with documented results</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>Building German (A2-B1), skills are solid</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>Skills strong, German barely started</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>Early on both</span><span class="pts">0</span></div>
+      </div>
+      <div class="q">
+        <div class="p"><span class="qn">Q6</span>How recently have you used German in a real, unscripted conversation?</div>
+        <div class="opt"><span class="l">A</span><span>This week: I actively practise speaking</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>Within the last month</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>Rarely: I study more than I speak</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I have not really spoken it</span><span class="pts">0</span></div>
+      </div>
+    </div>
+
+    <div class="dim">
+      <div class="dim-h"><span class="n">04</span><h2>Mindset</h2></div>
+      <div class="q">
+        <div class="p"><span class="qn">Q7</span>When months pass with no results, what honestly happens in your head?</div>
+        <div class="opt"><span class="l">A</span><span>I look for what to change and adjust the approach</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>I push harder doing the same things</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>I start doubting it is possible for someone like me</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I pause and drift for a while</span><span class="pts">0</span></div>
+      </div>
+      <div class="q">
+        <div class="p"><span class="qn">Q8</span>When another Indian engineer lands a job in Germany, your honest reaction is:</div>
+        <div class="opt"><span class="l">A</span><span>I study what they did and apply it</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>I am motivated, but unsure how they did it</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>I feel behind and a little discouraged</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>I tell myself they got lucky</span><span class="pts">0</span></div>
+      </div>
+    </div>
+
+    <div class="dim">
+      <div class="dim-h"><span class="n">05</span><h2>90-Day Plan</h2></div>
+      <div class="q">
+        <div class="p"><span class="qn">Q9</span>Your plan for the next 90 days is:</div>
+        <div class="opt"><span class="l">A</span><span>Written and specific, with weekly actions</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>A clear goal, but no real plan</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>A rough intention</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>Honestly, just hope</span><span class="pts">0</span></div>
+      </div>
+      <div class="q">
+        <div class="p"><span class="qn">Q10</span>In the last 7 days, how many concrete actions did you take toward Germany?</div>
+        <div class="opt"><span class="l">A</span><span>Several: it is part of a routine</span><span class="pts">3</span></div>
+        <div class="opt"><span class="l">B</span><span>One or two</span><span class="pts">2</span></div>
+        <div class="opt"><span class="l">C</span><span>I meant to, but did not</span><span class="pts">1</span></div>
+        <div class="opt"><span class="l">D</span><span>None</span><span class="pts">0</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="signoff">
+    <div class="note">
+      Reviewed and approved for the Germany Career Summit. Dimensions and scoring confirmed to match the
+      Germany Readiness method. Notes / changes: ____________________________________________
+    </div>
+    <div class="sign">
+      <div class="line"></div>
+      <div class="cap">Ameen Rahaman, B2 Consultants / German Note · Date</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -2,11 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeToggle from "./ThemeToggle";
 
-const NAV = [
-  { href: "/reality-check", label: "Reality Check" },
-  { href: "/cv-lab", label: "CV & LinkedIn Lab" },
-  { href: "/roadmap", label: "90-Day Roadmap" },
-];
+// For the summit, the suite leads with the Reality Check. The CV & LinkedIn Lab
+// and the 90-Day Roadmap are intentionally not surfaced here: the Lab is hidden,
+// and the roadmap is shared later as a direct link. Their routes still work.
+const NAV = [{ href: "/reality-check", label: "Reality Check" }];
 
 export default function Header() {
   return (
@@ -52,19 +51,6 @@ export default function Header() {
           <ThemeToggle />
         </div>
       </div>
-
-      {/* Mobile module nav */}
-      <nav className="flex items-center gap-5 overflow-x-auto border-t border-[var(--line)] px-5 py-2.5 text-xs font-medium text-muted md:hidden">
-        {NAV.map((n) => (
-          <Link
-            key={n.href}
-            href={n.href}
-            className="whitespace-nowrap transition-colors hover:text-text"
-          >
-            {n.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

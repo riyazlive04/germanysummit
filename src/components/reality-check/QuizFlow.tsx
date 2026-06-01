@@ -288,8 +288,9 @@ export default function QuizFlow({
         </h2>
 
         <div className="mt-8 grid gap-3">
-          {q.options.map((opt) => {
+          {q.options.map((opt, i) => {
             const isSelected = selected === opt.points;
+            const letter = String.fromCharCode(65 + i); // A, B, C, D
             return (
               <button
                 key={opt.label}
@@ -301,14 +302,15 @@ export default function QuizFlow({
                     : "border-[var(--line)] bg-surface hover:border-[var(--anchor-hi)] hover:bg-surface-2"
                 }`}
               >
+                {/* Letter badge (A-D): the shared reference for the live room reveal. */}
                 <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors ${
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 font-mono text-xs font-bold transition-colors ${
                     isSelected
-                      ? "border-gold bg-gold"
-                      : "border-muted group-hover:border-gold"
+                      ? "border-gold bg-gold text-gold-ink"
+                      : "border-muted text-muted group-hover:border-gold"
                   }`}
                 >
-                  {isSelected && <span className="text-xs text-gold-ink">✓</span>}
+                  {letter}
                 </span>
                 <span
                   className={`text-[15px] ${isSelected ? "font-medium text-text" : "text-muted"}`}

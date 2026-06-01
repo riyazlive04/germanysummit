@@ -2,27 +2,26 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const MODULES = [
+// What the Reality Check gives each attendee. The suite leads with this single
+// module for the summit; the deeper tools come later, through the coach.
+const HIGHLIGHTS = [
   {
     n: "01",
-    name: "Reality Check",
-    line: "Ten honest questions across five dimensions. Your position on Germany, computed - not guessed.",
-    payoff: "Pentagon radar · score 0-100 · tier · your archetype",
-    href: "/reality-check",
+    name: "Your Readiness Score",
+    line: "Ten honest questions across five dimensions, scored 0 to 100. Computed, not guessed.",
+    payoff: "score · tier · where you really stand",
   },
   {
     n: "02",
-    name: "CV & LinkedIn Lab",
-    line: "Paste your résumé and a target German JD. We name what a recruiter won't say out loud.",
-    payoff: "ATS match · keyword gaps · weak-bullet flags · top 3 fixes",
-    href: "/cv-lab",
+    name: "Your pentagon radar",
+    line: "See at a glance which dimensions are strong and which are quietly dragging you down.",
+    payoff: "Profile · Strategy · German · Mindset · Plan",
   },
   {
     n: "03",
-    name: "90-Day Roadmap",
-    line: "A directional, week-by-week plan built from your readiness profile and CV gaps.",
-    payoff: "12 weeks · 3 phases · front-loaded on your weak spots",
-    href: "/roadmap",
+    name: "Your archetype and first fix",
+    line: "The kind of candidate you are right now, and the single gap to close first.",
+    payoff: "one honest mirror, one place to start",
   },
 ];
 
@@ -89,26 +88,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Modules */}
+        {/* What the Reality Check gives you */}
         <section className="grid gap-4 pb-6 lg:grid-cols-3">
-          {MODULES.map((m) => (
-            <Link
-              key={m.n}
-              href={m.href}
-              className="card group flex flex-col gap-5 p-7 transition-all hover:-translate-y-1 hover:border-[var(--gold)]"
-            >
-              <div className="flex items-center justify-between">
-                <span className="nums font-display text-5xl font-bold text-[var(--anchor-hi)] transition-colors group-hover:text-gold">
-                  {m.n}
-                </span>
-                <span className="text-2xl text-muted transition-transform group-hover:translate-x-1 group-hover:text-gold">
-                  →
-                </span>
-              </div>
+          {HIGHLIGHTS.map((m) => (
+            <div key={m.n} className="card flex flex-col gap-5 p-7">
+              <span className="nums font-display text-5xl font-bold text-[var(--anchor-hi)]">
+                {m.n}
+              </span>
               <h2 className="font-display text-2xl">{m.name}</h2>
               <p className="text-[15px] leading-relaxed text-muted">{m.line}</p>
               <p className="eyebrow mt-auto !text-[0.7rem] !text-muted">{m.payoff}</p>
-            </Link>
+            </div>
           ))}
         </section>
 

@@ -8,6 +8,7 @@
  */
 import { DIMENSIONS, type DecodedSubmission, type DimScores } from "./submission";
 import { getTier, type Tier } from "./scoring";
+import { QUESTIONS } from "./questions";
 
 export const TIERS: Tier[] = [
   "Invisible to Recruiters",
@@ -103,6 +104,57 @@ export function computeLift(subs: DecodedSubmission[]): ScoreLift {
     topGain,
     phaseAverages,
   };
+}
+
+/**
+ * Live per-question answer distribution for the big-screen reveal. For each of
+ * the 10 questions, how many people chose each option (A-D), as a count and a
+ * percent of those who answered. Answers are stored as the chosen option's
+ * POINTS, so each option is matched by its points value (unique per question),
+ * which keeps the A-D mapping identical to what attendees saw in the quiz.
+ */
+export type AnswerOption = {
+  letter: string; // A, B, C, D (display order)
+  label: string;
+  points: number;
+  count: number;
+  pct: number; // 0..100, of respondents
+};
+export type QuestionDistribution = {
+  id: string;
+  dimension: string;
+  prompt: string;
+  options: AnswerOption[];
+};
+export type AnswerDistribution = {
+  respondents: number; // how many completed the Reality Check (have answers)
+  questions: QuestionDistribution[];
+};
+
+export function answerDistribution(subs: DecodedSubmission[]): AnswerDistribution {
+  const answered = subs.filter(
+    (s) => Array.isArray(s.answers) && s.answers.length === QUESTIONS.length,
+  );
+  const respondents = answered.length;
+
+  const questions: QuestionDistribution[] = QUESTIONS.map((q, qi) => {
+    const options: AnswerOption[] = q.options.map((opt, oi) => {
+      const count = answered.reduce(
+        (acc, s) => acc + (s.answers![qi] === opt.points ? 1 : 0),
+        0,
+      );
+      return {
+        letter: String.fromCharCode(65 + oi),
+        label: opt.label,
+        points: opt.points,
+        count,
+        pct: respondents > 0 ? Math.round((count / respondents) * 100) : 0,
+      };
+    });
+    return { id: q.id, dimension: q.dimension, prompt: q.prompt, options };
+  });
+
+  return { respondents, questions };
 }
 
 function emptyTierCounts(): Record<Tier, number> {

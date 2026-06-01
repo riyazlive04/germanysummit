@@ -26,7 +26,9 @@ next-env.d.ts
 /docs/howto/frames/
 /docs/howto/frames-light/
 /docs/_verify.png
+/docs/_qv.png
 /docs/assets/fold/
+/docs/assets/verify/
 
 # misc
 .DS_Store
