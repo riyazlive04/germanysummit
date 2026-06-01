@@ -31,6 +31,7 @@ type Rec = {
   totalScore: number | null;
   tier: string | null;
   archetype: string | null;
+  enrolledProgram: EnrolledProgram;
   weakestDim: string | null;
   consistency: number | null;
   yearsPlanning: string | null;
@@ -47,7 +48,10 @@ type Rec = {
   createdAt: string;
 };
 
-type Seats = { total: number; claimed: number };
+type Buyer = { name: string; at: string };
+type Program = { total: number; claimed: number; buyers: Buyer[] };
+type Seats = { guided: Program; solo: Program };
+type EnrolledProgram = "guided" | "solo" | null;
 
 const INTENT_STYLE: Record<Intent, string> = {
   Hot: "!border-red text-red",
@@ -60,9 +64,13 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [records, setRecords] = useState<Rec[]>([]);
   const [allowAll, setAllowAll] = useState(false);
-  const [seats, setSeats] = useState<Seats>({ total: 8, claimed: 0 });
+  const [seats, setSeats] = useState<Seats>({
+    guided: { total: 8, claimed: 0, buyers: [] },
+    solo: { total: 25, claimed: 0, buyers: [] },
+  });
   const [hotOnly, setHotOnly] = useState(false);
   const [sortIntent, setSortIntent] = useState(false);
+  const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -216,6 +224,14 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
   }
 
   let view = [...records];
+  const q = query.trim().toLowerCase();
+  if (q)
+    view = view.filter(
+      (r) =>
+        (r.name || "").toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        (r.phone || "").includes(q),
+    );
   if (hotOnly) view = view.filter((r) => r.intentLabel !== "Cool");
   if (sortIntent) view.sort((a, b) => b.intentScore - a.intentScore);
 
@@ -247,77 +263,64 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         </div>
       </div>
 
-      {/* Controls: seats + global retake */}
-      <div className="mb-5 grid gap-4 lg:grid-cols-2">
-        {/* Seat scarcity */}
-        <div className="card flex items-center justify-between gap-3 p-5">
-          <div>
-            <p className="font-medium">Seats claimed</p>
-            <p className="text-sm text-muted">
-              Live scarcity for the buying window. The room screen shows this.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => act({ action: "seatsClaimedDelta", value: -1 })}
-              disabled={busy || seats.claimed <= 0}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--line)] text-lg disabled:opacity-40"
-            >
-              −
-            </button>
-            <span className="nums min-w-[72px] text-center font-display text-2xl">
-              {seats.claimed}
-              <span className="text-base text-muted"> / {seats.total}</span>
-            </span>
-            <button
-              onClick={() => act({ action: "seatsClaimedDelta", value: 1 })}
-              disabled={busy || seats.claimed >= seats.total}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-gold text-lg text-gold disabled:opacity-40"
-            >
-              +
-            </button>
-            <input
-              type="number"
-              min={0}
-              defaultValue={seats.total}
-              key={seats.total}
-              onBlur={(e) => {
-                const v = Number(e.target.value);
-                if (v !== seats.total) void act({ action: "setSeatsTotal", value: v });
-              }}
-              className="input ml-1 w-16 !px-2 !py-1.5 text-center text-sm"
-              title="Total seats"
-            />
-          </div>
+      {/* Live enrollments (buying window) */}
+      <div className="card mb-4 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="font-medium">Live enrollments</p>
+          <p className="text-sm text-muted">
+            On-spot UPI. Mark each buyer in their row (G / S). Counts and names show
+            on the room screen.
+          </p>
         </div>
-
-        {/* Global override */}
-        <div className="card flex items-center justify-between gap-3 p-5">
-          <div>
-            <p className="font-medium">Allow everyone to retake</p>
-            <p className="text-sm text-muted">
-              Turn on for the arrival and end-of-day pulses, then off.
-            </p>
-          </div>
-          <button
-            onClick={() => act({ action: "setGlobalAllow", value: !allowAll })}
-            disabled={busy}
-            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-              allowAll ? "bg-green" : "bg-[var(--surface-2)]"
-            }`}
-            aria-pressed={allowAll}
-          >
-            <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${
-                allowAll ? "left-6" : "left-1"
-              }`}
-            />
-          </button>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <ProgramSummary
+            label="Guided Mode"
+            accent
+            program={seats.guided}
+            busy={busy}
+            onSetTotal={(t) => act({ action: "setSeatsTotal", value: t })}
+          />
+          <ProgramSummary
+            label="Solo Mode"
+            program={seats.solo}
+            busy={busy}
+            onSetTotal={(t) => act({ action: "setSoloTotal", value: t })}
+          />
         </div>
       </div>
 
-      {/* Intent filters */}
+      {/* Global override */}
+      <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="font-medium">Allow everyone to retake</p>
+          <p className="text-sm text-muted">
+            Turn on for the arrival and end-of-day pulses, then off.
+          </p>
+        </div>
+        <button
+          onClick={() => act({ action: "setGlobalAllow", value: !allowAll })}
+          disabled={busy}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+            allowAll ? "bg-green" : "bg-[var(--surface-2)]"
+          }`}
+          aria-pressed={allowAll}
+        >
+          <span
+            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${
+              allowAll ? "left-6" : "left-1"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Search + intent filters */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name, email, phone…"
+          className="input w-56 !py-1.5 text-sm"
+        />
         <button
           onClick={() => setHotOnly((v) => !v)}
           className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
@@ -339,11 +342,12 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
 
       {/* Table */}
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[1040px] text-left text-sm">
+        <table className="w-full min-w-[1160px] text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--line)] text-muted">
               <Th>Person</Th>
               <Th>Intent</Th>
+              <Th>Enroll</Th>
               <Th>Session</Th>
               <Th>Score</Th>
               <Th>Modules</Th>
@@ -372,6 +376,13 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                   <div className="mt-0.5 text-center font-mono text-[0.65rem] text-muted">
                     {r.intentScore}
                   </div>
+                </Td>
+                <Td>
+                  <EnrollCell
+                    program={r.enrolledProgram}
+                    busy={busy}
+                    onEnroll={(p) => act({ action: "enroll", id: r.id, program: p })}
+                  />
                 </Td>
                 <Td>
                   <span className="eyebrow !text-[0.68rem] !text-muted">
@@ -464,7 +475,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             ))}
             {view.length === 0 && (
               <tr>
-                <td colSpan={10} className="p-10 text-center text-muted">
+                <td colSpan={11} className="p-10 text-center text-muted">
                   No submissions in this view.
                 </td>
               </tr>
@@ -472,6 +483,93 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/** Per-program count, editable target, and the live buyer names. */
+function ProgramSummary({
+  label,
+  program,
+  accent,
+  busy,
+  onSetTotal,
+}: {
+  label: string;
+  program: Program;
+  accent?: boolean;
+  busy: boolean;
+  onSetTotal: (total: number) => void;
+}) {
+  const remaining = Math.max(0, program.total - program.claimed);
+  return (
+    <div className={`rounded-xl border p-4 ${accent ? "border-gold" : "border-[var(--line)]"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-display text-lg">{label}</span>
+        <span className="nums font-display text-3xl text-gold">
+          {program.claimed}
+          <span className="text-base text-muted"> / {program.total}</span>
+        </span>
+      </div>
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-xs text-muted">{remaining} left</span>
+        <label className="flex items-center gap-1 text-xs text-muted">
+          target
+          <input
+            type="number"
+            min={0}
+            defaultValue={program.total}
+            key={program.total}
+            disabled={busy}
+            onBlur={(e) => {
+              const v = Number(e.target.value);
+              if (v !== program.total) onSetTotal(v);
+            }}
+            className="input w-14 !px-2 !py-1 text-center text-sm"
+          />
+        </label>
+      </div>
+      {program.buyers.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {program.buyers.map((b, i) => (
+            <span key={i} className="chip !py-1 !text-xs">
+              {b.name}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Per-row enroll toggles: G = Guided, S = Solo. Tap the active one to clear. */
+function EnrollCell({
+  program,
+  busy,
+  onEnroll,
+}: {
+  program: EnrolledProgram;
+  busy: boolean;
+  onEnroll: (p: EnrolledProgram) => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      <button
+        onClick={() => onEnroll(program === "guided" ? null : "guided")}
+        disabled={busy}
+        title="Guided Mode"
+        className={`chip !px-2.5 ${program === "guided" ? "!border-gold bg-gold text-gold-ink" : "text-muted hover:!border-gold"}`}
+      >
+        G
+      </button>
+      <button
+        onClick={() => onEnroll(program === "solo" ? null : "solo")}
+        disabled={busy}
+        title="Solo Mode"
+        className={`chip !px-2.5 ${program === "solo" ? "!border-green bg-green text-white" : "text-muted hover:!border-green"}`}
+      >
+        S
+      </button>
     </div>
   );
 }

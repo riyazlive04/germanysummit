@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Event-Day App Playbook</title>
+<style>
+  @page { size: A4; margin: 13mm 14mm 15mm 14mm; }
+  :root{
+    --ink:#11201a; --muted:#5b6960; --gold:#9a6f0c; --gold-bright:#b8860b;
+    --green:#0f3d2e; --green-soft:#1c5a44; --line:#e3e7e3; --cream:#f7f5ef; --chip:#efeadd;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI",-apple-system,Helvetica,Arial,sans-serif; color:var(--ink);
+    font-size:11px; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; margin:0; line-height:1.15;
+    break-after:avoid; page-break-after:avoid; }
+  .eyebrow{ font-family:"Consolas","Courier New",monospace; text-transform:uppercase;
+    letter-spacing:.16em; font-size:8px; color:var(--gold); font-weight:700; }
+  .muted{ color:var(--muted); }
+  strong{ color:var(--ink); }
+  ul{ margin:5px 0; padding-left:0; list-style:none; }
+  li{ position:relative; padding-left:15px; margin:4px 0; }
+  li::before{ content:""; position:absolute; left:2px; top:6px; width:5px; height:5px;
+    background:var(--gold-bright); border-radius:50%; }
+  .check li::before{ content:"\2713"; background:none; color:var(--gold-bright); font-weight:700; top:0; left:0; }
+
+  .cover{ background:var(--green); color:#f3efe2; border-radius:14px; padding:24px 26px; margin-bottom:16px; }
+  .cover .eyebrow{ color:#e0b94a; }
+  .cover h1{ color:#fff; font-size:28px; margin-top:8px; }
+  .cover p{ color:#cbd8d0; margin:9px 0 0; max-width:560px; font-size:11px; }
+  .cover .meta{ margin-top:13px; font-family:"Consolas",monospace; font-size:8.5px; letter-spacing:.1em; color:#e0b94a; }
+
+  section{ margin:0 0 13px; }
+  .sec-head{ display:flex; align-items:baseline; gap:9px; border-bottom:2px solid var(--gold-bright);
+    padding-bottom:4px; margin-bottom:9px; break-after:avoid; page-break-after:avoid; break-inside:avoid; }
+  .sec-head .n{ font-family:"Consolas",monospace; color:var(--gold); font-size:10px; font-weight:700; }
+  .sec-head h2{ font-size:15.5px; color:var(--green); }
+  .sec-head + *{ break-before:avoid; }
+
+  table{ width:100%; border-collapse:collapse; font-size:10px; break-inside:avoid; }
+  th,td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ font-family:"Consolas",monospace; font-size:7.6px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  td .t{ font-weight:700; color:var(--green); }
+  .mono{ font-family:"Consolas",monospace; font-size:9px; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .card{ border:1px solid var(--line); border-radius:10px; padding:11px 13px; background:#fff; break-inside:avoid; }
+  .card.cream{ background:var(--cream); }
+  .card h3{ font-size:12.5px; color:var(--green); margin-bottom:3px; }
+  .callout{ border-left:4px solid var(--gold-bright); background:var(--cream); border-radius:0 8px 8px 0; padding:9px 13px; break-inside:avoid; }
+  .pill{ display:inline-block; background:var(--green); color:#fff; font-family:"Consolas",monospace;
+    font-size:7.6px; letter-spacing:.06em; padding:2px 7px; border-radius:20px; }
+  .tag{ display:inline-block; font-family:"Consolas",monospace; font-size:7.4px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--gold); background:var(--chip); border-radius:4px; padding:2px 6px; }
+
+  figure{ margin:8px 0 0; break-inside:avoid; }
+  figure img{ width:100%; display:block; border:1px solid var(--line); border-radius:8px; }
+  figure figcaption{ font-family:"Consolas",monospace; font-size:7.6px; color:var(--muted); margin-top:3px; letter-spacing:.04em; }
+  .shotrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .page-break{ page-break-before:always; }
+  .who{ font-family:"Consolas",monospace; font-size:8px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+  .footer{ margin-top:14px; border-top:1px solid var(--line); padding-top:8px;
+    font-family:"Consolas",monospace; font-size:7.6px; letter-spacing:.05em; color:var(--muted); display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+
+  <div class="cover">
+    <span class="eyebrow">Event-Day App Playbook · for Ameen & team</span>
+    <h1>Running the Germany Readiness app on the day</h1>
+    <p>One job: turn the room's own answers into a number on the screen, then into
+       enrollments. This is the operator guide — which screen, which moment, who.</p>
+    <div class="meta">germanysummit.sirahagents.com · 20 June 2026 · MMA Hall, Chennai</div>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>Four screens, one link</h2></div>
+    <table>
+      <thead><tr><th>Screen</th><th>Address</th><th>For</th></tr></thead>
+      <tbody>
+        <tr><td><span class="t">Reality Check</span></td><td class="mono">/reality-check</td><td>Attendees take it on their phone. 10 questions + consistency and years.</td></tr>
+        <tr><td><span class="t">The Room</span></td><td class="mono">/room</td><td>Big screen. Live averages, radar, the room's shift, and the seat counter.</td></tr>
+        <tr><td><span class="t">Live answers</span></td><td class="mono">/room/live</td><td>The section-by-section reveal Ameen presents from. Has "Stage mode".</td></tr>
+        <tr><td><span class="t">Records</span></td><td class="mono">/room/records</td><td>Admin. Intent list, enrollments, follow-up export, retake controls.</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:6px">The three /room screens open with the <strong>admin key</strong>. Bookmark them with <span class="mono">?key=YOURKEY</span> so they open in one tap. Keep the key off the projector.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>Before the day — Riyaz sets up</h2></div>
+    <div class="grid2">
+      <ul class="check">
+        <li>Anthropic API key funded (the CV/roadmap AI needs it; Reality Check works without it).</li>
+        <li>Strong admin key set; shared only with Ameen, tech, and the closer.</li>
+        <li>Guided Mode capacity set (8, or 10) and Solo target (25) in Records.</li>
+      </ul>
+      <ul class="check">
+        <li>Pre-event link in the reminder email/WhatsApp so people arrive already scored.</li>
+        <li>Open the QR/link from 3 phones; confirm a test submission lands in Records.</li>
+        <li>Bookmark <span class="mono">/room?key=</span>, <span class="mono">/room/live?key=</span>, <span class="mono">/room/records?key=</span> on the stage laptop and a tablet.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="n">03</span><h2>The one rule of the reveal</h2></div>
+    <div class="callout">
+      <p style="margin:0"><strong>Hands first, screen second.</strong> Ameen still asks for hands in the debrief. Then the screen shows the exact number as the punch:
+      <em>"You saw the hands — here is the truth: 78% of this room can't state the problem they solve."</em> The screen amplifies the moment; it never replaces the hands.</p>
+    </div>
+    <p class="muted" style="margin-top:6px">Stage mode shows one big stat per question (the share who chose a weaker answer) with that line ready to read. Toggle it with the <strong>Stage mode</strong> button or the <strong>S</strong> key; move sections with the <strong>arrow keys</strong>.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="page-break">
+    <div class="sec-head"><span class="n">04</span><h2>The timeline — when Ameen uses what</h2></div>
+    <table>
+      <thead><tr><th>Time</th><th>Agenda moment</th><th>App action</th><th>Who</th></tr></thead>
+      <tbody>
+        <tr><td>9:30</td><td>Registration</td><td>Attendees scan the QR / open the link and take the Reality Check.</td><td class="who">Reg team</td></tr>
+        <tr><td>10:00</td><td>Opening + stand-up</td><td>The Room on screen behind Ameen (or a holding slide). No reveal yet.</td><td class="who">Tech</td></tr>
+        <tr><td>10:30</td><td>Section 1 debrief — Profile</td><td>Live answers → Section 1. Hands, then <strong>Stage mode</strong> for the big %.</td><td class="who">Ameen / Tech</td></tr>
+        <tr><td>11:05</td><td>Section 2 — Strategy</td><td>Arrow to Section 2. Reveal the "50 applications, 0 replies" numbers.</td><td class="who">Ameen / Tech</td></tr>
+        <tr><td>11:35</td><td>Section 3 — Skills & German</td><td>Arrow to Section 3. Reveal who is waiting on a certificate.</td><td class="who">Ameen / Tech</td></tr>
+        <tr><td>12:05</td><td>Section 4 — Mindset (the peak)</td><td>Open the <strong>Mindset pulse</strong>: average consistency, % below 5, 2+ years.</td><td class="who">Ameen / Tech</td></tr>
+        <tr><td>12:30</td><td>Lunch</td><td>Records → <strong>High intent only + Sort by intent</strong> to pick testimonial people.</td><td class="who">Video team</td></tr>
+        <tr><td>1:30</td><td>Section 5 + testimonials</td><td>Live answers as needed; The Room shows the day's shift.</td><td class="who">Ameen / Tech</td></tr>
+        <tr><td>2:30</td><td>The pitch</td><td>The Room on screen — the seat counter is visible as scarcity.</td><td class="who">Tech</td></tr>
+        <tr><td>2:50</td><td>Buying window</td><td>Payment team marks each buyer in Records; names + count update on screen.</td><td class="who">Payment</td></tr>
+        <tr><td>4:00+</td><td>After close</td><td>Records → <strong>Export CSV</strong> (high-intent + follow-up). Send that night.</td><td class="who">Riyaz</td></tr>
+      </tbody>
+    </table>
+
+    <div class="shotrow" style="margin-top:10px">
+      <figure><img src="assets/shots-light/live-stage.png" alt="Stage mode" /><figcaption>Stage mode: the Gap → Pain reveal, one big number per question.</figcaption></figure>
+      <figure><img src="assets/shots-light/live-mindset.png" alt="Mindset pulse" /><figcaption>Section 4: the room's consistency and how long they've been stuck.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="page-break">
+    <div class="sec-head"><span class="n">05</span><h2>The buying window — two programs, live names</h2></div>
+    <ul>
+      <li>Two programs sell: <strong>Guided Mode</strong> (the 8-seat scarcity hero) and <strong>Solo Mode</strong> (the ~25 downsell). Payment is on-spot UPI.</li>
+      <li>When someone pays, the payment team finds them in <strong>Records</strong> (use the search box), and taps <strong>G</strong> (Guided) or <strong>S</strong> (Solo) in their row.</li>
+      <li>The big screen updates within seconds: <strong>"N left of 8"</strong> for Guided, the Solo count, and the <strong>real names</strong> of who just joined — live social proof.</li>
+      <li>To change capacity, edit the <strong>target</strong> box on the Guided or Solo card (e.g. 8 to 10).</li>
+    </ul>
+    <div class="callout" style="margin-top:7px">
+      <span class="eyebrow">Where to update the seats</span>
+      <p style="margin:5px 0 0">Records page → the <strong>Live enrollments</strong> card and the <strong>G / S</strong> buttons in each row. "Seats left" on the room screen is just <span class="mono">target − enrolled</span>. Tap on a tablet; Ameen stays on stage.</p>
+    </div>
+    <div class="shotrow" style="margin-top:9px">
+      <figure><img src="assets/shots-light/room.png" alt="Room seats" /><figcaption>The Room: Guided seats left + Solo count, with buyer names.</figcaption></figure>
+      <figure><img src="assets/shots-light/records.png" alt="Records enrollments" /><figcaption>Records: mark each buyer (G / S), search, intent list, follow-up.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="sec-head"><span class="n">06</span><h2>Who does what</h2></div>
+    <div class="grid2">
+      <div class="card cream"><h3>Ameen</h3>Presents from Live answers. Cues the screen ("show me the room"), reads the big number, runs the Mindset pulse at the peak. Never touches admin.</div>
+      <div class="card cream"><h3>Tech (Karthick)</h3>Runs The Room and Live answers on the projector. Advances sections (arrows) and toggles Stage mode (S) on Ameen's cue.</div>
+      <div class="card cream"><h3>Payment team (Asma)</h3>Records on a tablet. Searches each buyer, taps G or S as UPI payments land. Watches the seat count.</div>
+      <div class="card cream"><h3>Riyaz</h3>Sets up before, monitors during, exports the high-intent + follow-up list after, and sends the personalized messages that night.</div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="sec-head"><span class="n">07</span><h2>What Riyaz does — start to finish</h2></div>
+    <div class="grid2">
+      <div>
+        <span class="tag">Before</span>
+        <ul>
+          <li>Fund the Anthropic key; set a strong admin key.</li>
+          <li>Set Guided capacity (8/10) and Solo target (25).</li>
+          <li>Put the pre-event link in the reminder; test from 3 phones.</li>
+          <li>Bookmark the three /room screens with the key on the stage laptop + a tablet.</li>
+        </ul>
+      </div>
+      <div>
+        <span class="tag">During</span>
+        <ul>
+          <li>Make sure Live answers is on the right section before each debrief.</li>
+          <li>Confirm the seat count is being updated as payments come in.</li>
+          <li>Keep an eye on the room count and that submissions are landing.</li>
+        </ul>
+        <span class="tag">After</span>
+        <ul>
+          <li>Records → Export CSV (the high-intent list + ready follow-up per person).</li>
+          <li>Send the personalized follow-ups that night; share the hot list with Ameen.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="sec-head"><span class="n">08</span><h2>Quick reference</h2></div>
+    <div class="grid2">
+      <ul>
+        <li><strong>Keyboard (Live answers):</strong> <span class="pill">←</span> <span class="pill">→</span> sections · <span class="pill">S</span> stage mode.</li>
+        <li><strong>Deep link a view:</strong> <span class="mono">/room/live?key=…&section=4&stage=1</span></li>
+        <li><strong>Update seats:</strong> Records → Live enrollments card + G/S per row.</li>
+      </ul>
+      <ul>
+        <li><strong>Find a buyer fast:</strong> Records → search box (name/email/phone).</li>
+        <li><strong>Allow retakes</strong> for arrival/end-of-day pulses: Records → toggle, then off.</li>
+        <li><strong>Follow-up:</strong> "copy" per row, or Export CSV for all.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>Germany Readiness Suite · B2 Consultants / German Note</span>
+    <span>Event-Day App Playbook · internal</span>
+  </div>
+
+</body>
+</html>

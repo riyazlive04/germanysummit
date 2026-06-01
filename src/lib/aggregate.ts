@@ -228,6 +228,35 @@ export function mindsetPulse(subs: DecodedSubmission[]): MindsetPulse {
   };
 }
 
+// ── Enrollments (buying window) ──────────────────────────────────────────────
+
+export type Enrollment = {
+  count: number;
+  buyers: { name: string; at: string }[]; // most recent first
+};
+export type EnrollmentSummary = { guided: Enrollment; solo: Enrollment };
+
+/** Live counts + buyer names per program, derived from Submission.enrolledProgram. */
+export function enrollmentSummary(subs: DecodedSubmission[]): EnrollmentSummary {
+  const pick = (program: string): Enrollment => {
+    const rows = subs
+      .filter((s) => s.enrolledProgram === program)
+      .sort((a, b) => {
+        const ta = a.enrolledAt ? new Date(a.enrolledAt).getTime() : 0;
+        const tb = b.enrolledAt ? new Date(b.enrolledAt).getTime() : 0;
+        return tb - ta;
+      });
+    return {
+      count: rows.length,
+      buyers: rows.map((s) => ({
+        name: s.name?.trim() || s.email,
+        at: s.enrolledAt ? new Date(s.enrolledAt).toISOString() : "",
+      })),
+    };
+  };
+  return { guided: pick("guided"), solo: pick("solo") };
+}
+
 function emptyTierCounts(): Record<Tier, number> {
   return {
     "Invisible to Recruiters": 0,

@@ -80,6 +80,11 @@ model Submission {
   // grants this (consumed on the next regeneration).
   roadmapRegenAllowed Boolean @default(false)
 
+  // On-the-day enrollment (buying window). The team marks who paid (UPI on the
+  // spot) and into which program; the room screen shows live counts + names.
+  enrolledProgram String? //   'guided' | 'solo'
+  enrolledAt      DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,9 +95,11 @@ model Submission {
 model AppConfig {
   id              String   @id @default("singleton")
   allowAllRetakes Boolean  @default(false) // global override: let anyone retake
-  // Live seat-scarcity counter for the buying window (8-seat scarcity in the
-  // playbook). The payment team increments claimed; the room screen shows it.
-  seatsTotal      Int      @default(8)
-  seatsClaimed    Int      @default(0)
+  // Program targets for the buying window. Two programs sell on the day: Guided
+  // Mode (8-10 seats, the scarcity hero) and Solo Mode (~25 target, the
+  // downsell). Live counts + buyer names come from the per-person
+  // Submission.enrolledProgram, not a blind counter - these are just the targets.
+  seatsTotal      Int      @default(8) // Guided Mode capacity
+  soloTotal       Int      @default(25) // Solo Mode target
   updatedAt       DateTime @updatedAt
 }

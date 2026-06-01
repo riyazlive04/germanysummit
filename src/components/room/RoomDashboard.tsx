@@ -24,8 +24,13 @@ type RoomData = {
   overall: Aggregate;
   bySession: Record<string, Aggregate>;
   lift: ScoreLift;
-  seats?: { total: number; claimed: number };
+  seats?: {
+    guided: Program;
+    solo: Program;
+  };
 };
+
+type Program = { total: number; claimed: number; buyers: { name: string; at: string }[] };
 
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
 
@@ -210,9 +215,7 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
           </div>
 
           {/* Seat scarcity (buying window) */}
-          {data?.seats && data.seats.total > 0 && (
-            <SeatScarcity seats={data.seats} />
-          )}
+          {data?.seats?.guided && <SeatScarcity seats={data.seats} />}
 
           {/* Radar + breakdowns */}
           <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_1fr]">
@@ -288,33 +291,67 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
   );
 }
 
-/** Live seat-scarcity banner for the buying window (managed from /room/records). */
-function SeatScarcity({ seats }: { seats: { total: number; claimed: number } }) {
-  const remaining = Math.max(0, seats.total - seats.claimed);
-  const pct = seats.total > 0 ? (seats.claimed / seats.total) * 100 : 0;
+/** Live enrollment banner for the buying window (managed from /room/records).
+ * Guided Mode is the scarcity hero; Solo Mode tracks alongside. Both show the
+ * real names of who just joined - live social proof. */
+function SeatScarcity({ seats }: { seats: { guided: Program; solo: Program } }) {
+  const g = seats.guided;
+  const s = seats.solo;
+  const gLeft = Math.max(0, g.total - g.claimed);
+  const gPct = g.total > 0 ? (g.claimed / g.total) * 100 : 0;
   return (
-    <section className="panel-anchor p-7 sm:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="eyebrow">Seats in this batch</span>
-          <div className="mt-2 flex items-baseline gap-3">
-            <span className="nums font-display text-6xl leading-none text-gold sm:text-7xl">
-              {remaining}
-            </span>
-            <span className="text-lg text-on-anchor">left of {seats.total}</span>
-          </div>
+    <section className="panel-anchor grid gap-6 p-7 sm:grid-cols-[1.3fr_1fr] sm:p-8">
+      {/* Guided Mode - the scarcity hero */}
+      <div>
+        <span className="eyebrow">Guided Mode · seats in this batch</span>
+        <div className="mt-2 flex items-baseline gap-3">
+          <span className="nums font-display text-6xl leading-none text-gold sm:text-7xl">
+            {gLeft}
+          </span>
+          <span className="text-lg text-on-anchor">left of {g.total}</span>
         </div>
-        <span className="nums font-mono text-sm text-[color:rgba(245,242,234,0.7)]">
-          {seats.claimed} claimed
-        </span>
+        <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-[color:rgba(0,0,0,0.25)]">
+          <div
+            className="h-full rounded-full bg-gold transition-[width] duration-700 ease-out"
+            style={{ width: `${gPct}%` }}
+          />
+        </div>
+        <BuyerNames buyers={g.buyers} />
       </div>
-      <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-[color:rgba(0,0,0,0.25)]">
-        <div
-          className="h-full rounded-full bg-gold transition-[width] duration-700 ease-out"
-          style={{ width: `${pct}%` }}
-        />
+
+      {/* Solo Mode */}
+      <div className="sm:border-l sm:border-[color:rgba(245,242,234,0.15)] sm:pl-6">
+        <span className="eyebrow">Solo Mode</span>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="nums font-display text-4xl leading-none text-on-anchor">
+            {s.claimed}
+          </span>
+          <span className="text-on-anchor">joined of {s.total}</span>
+        </div>
+        <BuyerNames buyers={s.buyers} />
       </div>
     </section>
+  );
+}
+
+function BuyerNames({ buyers }: { buyers: { name: string; at: string }[] }) {
+  if (!buyers.length) return null;
+  return (
+    <div className="mt-4 flex flex-wrap gap-1.5">
+      {buyers.slice(0, 12).map((b, i) => (
+        <span
+          key={i}
+          className="rounded-full bg-[color:rgba(245,242,234,0.12)] px-2.5 py-1 text-xs text-on-anchor"
+        >
+          {b.name}
+        </span>
+      ))}
+      {buyers.length > 12 && (
+        <span className="px-1 py-1 text-xs text-[color:rgba(245,242,234,0.6)]">
+          +{buyers.length - 12} more
+        </span>
+      )}
+    </div>
   );
 }
 

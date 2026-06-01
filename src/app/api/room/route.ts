@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
-import { aggregate, computeLift } from "@/lib/aggregate";
+import { aggregate, computeLift, enrollmentSummary } from "@/lib/aggregate";
 import { getAppConfig } from "@/lib/config";
 
 export const runtime = "nodejs";
@@ -51,6 +51,7 @@ export async function GET(req: Request) {
   );
 
   const config = await getAppConfig();
+  const enroll = enrollmentSummary(all);
 
   return NextResponse.json({
     ok: true,
@@ -61,6 +62,17 @@ export async function GET(req: Request) {
     // True before/after lift, computed from per-person snapshots across ALL rows
     // (independent of the session filter, since it spans the whole day).
     lift: computeLift(all),
-    seats: { total: config.seatsTotal, claimed: config.seatsClaimed },
+    seats: {
+      guided: {
+        total: config.seatsTotal,
+        claimed: enroll.guided.count,
+        buyers: enroll.guided.buyers,
+      },
+      solo: {
+        total: config.soloTotal,
+        claimed: enroll.solo.count,
+        buyers: enroll.solo.buyers,
+      },
+    },
   });
 }

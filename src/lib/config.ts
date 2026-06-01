@@ -22,7 +22,7 @@ export async function setAllowAllRetakes(value: boolean) {
   });
 }
 
-/** Set the total seats for the scarcity counter (clamped >= 0). */
+/** Set the Guided Mode capacity (target). Claimed is derived from enrollments. */
 export async function setSeatsTotal(total: number) {
   const seatsTotal = Math.max(0, Math.round(total));
   return prisma.appConfig.upsert({
@@ -32,22 +32,12 @@ export async function setSeatsTotal(total: number) {
   });
 }
 
-/** Move the claimed-seat count by a delta (clamped to 0..seatsTotal). */
-export async function adjustSeatsClaimed(delta: number) {
-  const cfg = await getAppConfig();
-  const seatsClaimed = Math.max(0, Math.min(cfg.seatsTotal, cfg.seatsClaimed + delta));
-  return prisma.appConfig.update({
+/** Set the Solo Mode target. */
+export async function setSoloTotal(total: number) {
+  const soloTotal = Math.max(0, Math.round(total));
+  return prisma.appConfig.upsert({
     where: { id: SINGLETON },
-    data: { seatsClaimed },
-  });
-}
-
-/** Set the claimed-seat count directly (clamped to 0..seatsTotal). */
-export async function setSeatsClaimed(claimed: number) {
-  const cfg = await getAppConfig();
-  const seatsClaimed = Math.max(0, Math.min(cfg.seatsTotal, Math.round(claimed)));
-  return prisma.appConfig.update({
-    where: { id: SINGLETON },
-    data: { seatsClaimed },
+    create: { id: SINGLETON, soloTotal },
+    update: { soloTotal },
   });
 }

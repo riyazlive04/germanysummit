@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
-import {
-  getAppConfig,
-  setAllowAllRetakes,
-  setSeatsTotal,
-  adjustSeatsClaimed,
-  setSeatsClaimed,
-} from "@/lib/config";
+import { enrollmentSummary } from "@/lib/aggregate";
+import { getAppConfig, setAllowAllRetakes, setSeatsTotal, setSoloTotal } from "@/lib/config";
 import { intentScore, buildMirror, buildFollowup } from "@/lib/insights";
 
 export const runtime = "nodejs";
@@ -32,6 +27,7 @@ function slim(row: ReturnType<typeof decodeSubmission>) {
     totalScore: row.totalScore,
     tier: row.tier,
     archetype: row.archetype,
+    enrolledProgram: row.enrolledProgram,
     weakestDim: row.weakestDim,
     consistency: row.consistency,
     yearsPlanning: row.yearsPlanning,
@@ -57,11 +53,16 @@ export async function GET(req: Request) {
   }
   const rows = await prisma.submission.findMany({ orderBy: { createdAt: "desc" } });
   const config = await getAppConfig();
+  const decoded = rows.map(decodeSubmission);
+  const enroll = enrollmentSummary(decoded);
   return NextResponse.json({
     ok: true,
     allowAllRetakes: config.allowAllRetakes,
-    seats: { total: config.seatsTotal, claimed: config.seatsClaimed },
-    records: rows.map((r) => slim(decodeSubmission(r))),
+    seats: {
+      guided: { total: config.seatsTotal, claimed: enroll.guided.count, buyers: enroll.guided.buyers },
+      solo: { total: config.soloTotal, claimed: enroll.solo.count, buyers: enroll.solo.buyers },
+    },
+    records: decoded.map(slim),
   });
 }
 
@@ -73,8 +74,8 @@ type Action =
   | { action: "delete"; id: string }
   | { action: "setGlobalAllow"; value: boolean }
   | { action: "setSeatsTotal"; value: number }
-  | { action: "seatsClaimedDelta"; value: number }
-  | { action: "setSeatsClaimed"; value: number }
+  | { action: "setSoloTotal"; value: number }
+  | { action: "enroll"; id: string; program: "guided" | "solo" | null }
   | { action: "resetAll" };
 
 /** Admin mutations: per-user retake allow/lock, delete, global allow, reset all. */
@@ -125,12 +126,17 @@ export async function POST(req: Request) {
       case "setSeatsTotal":
         await setSeatsTotal(Number(body.value) || 0);
         break;
-      case "seatsClaimedDelta":
-        await adjustSeatsClaimed(Number(body.value) || 0);
+      case "setSoloTotal":
+        await setSoloTotal(Number(body.value) || 0);
         break;
-      case "setSeatsClaimed":
-        await setSeatsClaimed(Number(body.value) || 0);
+      case "enroll": {
+        const program = body.program === "guided" || body.program === "solo" ? body.program : null;
+        await prisma.submission.update({
+          where: { id: body.id },
+          data: { enrolledProgram: program, enrolledAt: program ? new Date() : null },
+        });
         break;
+      }
       case "resetAll":
         // Turn the global override off AND re-lock everyone (fresh state).
         await setAllowAllRetakes(false);
