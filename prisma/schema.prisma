@@ -58,6 +58,12 @@ model Submission {
   // though the live row is overwritten on each retake.
   scoreHistory String? // JSON: [{ score, session, at }]
 
+  // Section 4/5 emotional-context inputs from the stage playbook. NOT part of the
+  // 0-100 score - they power the live Mindset reveal, the personalized follow-up,
+  // and the closing "your own words" mirror.
+  consistency   Int? //    0..10 self-rating ("how consistent have you been?")
+  yearsPlanning String? // 'lt1' | '1to2' | '2to3' | 'gt3'
+
   // ── Module 2 — CV & LinkedIn Lab ────────────────────────────────────────
   cvAtsScore Int? //     0..100
   cvGaps     String? // JSON: rubric subScores, jdChecklist, weakBullets, germanChecklist, etc.
@@ -84,5 +90,9 @@ model Submission {
 model AppConfig {
   id              String   @id @default("singleton")
   allowAllRetakes Boolean  @default(false) // global override: let anyone retake
+  // Live seat-scarcity counter for the buying window (8-seat scarcity in the
+  // playbook). The payment team increments claimed; the room screen shows it.
+  seatsTotal      Int      @default(8)
+  seatsClaimed    Int      @default(0)
   updatedAt       DateTime @updatedAt
 }

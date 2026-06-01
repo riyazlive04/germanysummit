@@ -30,6 +30,11 @@ next-env.d.ts
 /docs/assets/fold/
 /docs/assets/verify/
 
+# Confidential source material (Ameen's playbook, agenda, pricing, book chapters).
+# Internal only - must never be committed to the repo.
+*.docx
+/docs/_extracted/
+
 # misc
 .DS_Store
 *.pem

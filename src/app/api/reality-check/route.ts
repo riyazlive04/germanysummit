@@ -6,11 +6,14 @@ import { fireN8n } from "@/lib/n8n";
 import { TOTAL_QUESTIONS } from "@/lib/questions";
 import { normalizePhone } from "@/lib/phone";
 import { evaluateLock, consumeRetakes } from "@/lib/gating";
+import { buildFollowup, buildMirror, intentScore } from "@/lib/insights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SESSIONS = ["pre_event", "on_arrival", "end_of_day"] as const;
+
+const YEARS = ["lt1", "1to2", "2to3", "gt3"] as const;
 
 type Body = {
   email?: string;
@@ -19,6 +22,8 @@ type Body = {
   source?: string;
   session?: string;
   answers?: unknown;
+  consistency?: unknown;
+  yearsPlanning?: unknown;
 };
 
 function validEmail(email: string): boolean {
@@ -75,6 +80,20 @@ export async function POST(req: Request) {
   const source = body.source?.trim() || undefined;
   const phoneNorm = normalizePhone(body.phone);
 
+  // Optional emotional-context inputs (not scored).
+  const consistency =
+    typeof body.consistency === "number" &&
+    Number.isInteger(body.consistency) &&
+    body.consistency >= 0 &&
+    body.consistency <= 10
+      ? body.consistency
+      : undefined;
+  const yearsPlanning =
+    typeof body.yearsPlanning === "string" &&
+    (YEARS as readonly string[]).includes(body.yearsPlanning)
+      ? body.yearsPlanning
+      : undefined;
+
   // Retake gating: a completed Reality Check locks this person (by email OR
   // phone) unless the admin granted a retake or the global override is on.
   const lock = await evaluateLock(email, phoneNorm);
@@ -118,6 +137,8 @@ export async function POST(req: Request) {
         phoneNorm,
         source,
         session,
+        ...(consistency !== undefined ? { consistency } : {}),
+        ...(yearsPlanning ? { yearsPlanning } : {}),
         ...module1,
       },
       update: {
@@ -125,6 +146,8 @@ export async function POST(req: Request) {
         ...(phone ? { phone } : {}),
         ...(phoneNorm ? { phoneNorm } : {}),
         ...(source ? { source } : {}),
+        ...(consistency !== undefined ? { consistency } : {}),
+        ...(yearsPlanning ? { yearsPlanning } : {}),
         session,
         ...module1,
       },
@@ -142,7 +165,14 @@ export async function POST(req: Request) {
 
   // Best-effort delivery - fan out to Sheets + WhatsApp. Failures are logged,
   // never surfaced; the result is already saved and shown.
-  const delivery = await fireN8n({ module: "reality-check", submission });
+  const delivery = await fireN8n({
+    module: "reality-check",
+    submission,
+    // Personalized assets for the operator's follow-up automation.
+    followup: buildFollowup(submission),
+    mirror: buildMirror(submission),
+    intent: intentScore(submission),
+  });
   if (!delivery.ok && !("skipped" in delivery)) {
     console.warn("[n8n] reality-check delivery failed:", delivery.error);
   }

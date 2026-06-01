@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
 import { aggregate, computeLift } from "@/lib/aggregate";
+import { getAppConfig } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +50,8 @@ export async function GET(req: Request) {
     SESSIONS.map((s) => [s, aggregate(all.filter((r) => r.session === s))]),
   );
 
+  const config = await getAppConfig();
+
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
@@ -58,5 +61,6 @@ export async function GET(req: Request) {
     // True before/after lift, computed from per-person snapshots across ALL rows
     // (independent of the session filter, since it spans the whole day).
     lift: computeLift(all),
+    seats: { total: config.seatsTotal, claimed: config.seatsClaimed },
   });
 }

@@ -25,7 +25,11 @@ export default function LabTabs(props: {
   return (
     <div className="py-10">
       <div className="mx-auto mb-9 max-w-2xl">
-        <span className="eyebrow">Module 02 · CV &amp; LinkedIn Lab</span>
+        <span className="eyebrow">Guided Mode · CV &amp; LinkedIn Lab</span>
+        <p className="mt-2 text-sm text-muted">
+          Your Weeks 1-2 rebuild tool: diagnose your CV and LinkedIn against the
+          German market, then fix them with your coach.
+        </p>
         <div className="mt-4 inline-flex rounded-full border border-[var(--line)] bg-surface p-1">
           {TABS.map((t) => (
             <button

@@ -24,6 +24,7 @@ type RoomData = {
   overall: Aggregate;
   bySession: Record<string, Aggregate>;
   lift: ScoreLift;
+  seats?: { total: number; claimed: number };
 };
 
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
@@ -208,6 +209,11 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
             />
           </div>
 
+          {/* Seat scarcity (buying window) */}
+          {data?.seats && data.seats.total > 0 && (
+            <SeatScarcity seats={data.seats} />
+          )}
+
           {/* Radar + breakdowns */}
           <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_1fr]">
             <section className="card flex flex-col items-center p-7">
@@ -279,6 +285,36 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Live seat-scarcity banner for the buying window (managed from /room/records). */
+function SeatScarcity({ seats }: { seats: { total: number; claimed: number } }) {
+  const remaining = Math.max(0, seats.total - seats.claimed);
+  const pct = seats.total > 0 ? (seats.claimed / seats.total) * 100 : 0;
+  return (
+    <section className="panel-anchor p-7 sm:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="eyebrow">Seats in this batch</span>
+          <div className="mt-2 flex items-baseline gap-3">
+            <span className="nums font-display text-6xl leading-none text-gold sm:text-7xl">
+              {remaining}
+            </span>
+            <span className="text-lg text-on-anchor">left of {seats.total}</span>
+          </div>
+        </div>
+        <span className="nums font-mono text-sm text-[color:rgba(245,242,234,0.7)]">
+          {seats.claimed} claimed
+        </span>
+      </div>
+      <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-[color:rgba(0,0,0,0.25)]">
+        <div
+          className="h-full rounded-full bg-gold transition-[width] duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </section>
   );
 }
 

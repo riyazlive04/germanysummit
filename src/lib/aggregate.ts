@@ -157,6 +157,77 @@ export function answerDistribution(subs: DecodedSubmission[]): AnswerDistributio
   return { respondents, questions };
 }
 
+// ── Mindset pulse (consistency + years planning) ─────────────────────────────
+
+export const YEARS_META: { value: string; label: string }[] = [
+  { value: "lt1", label: "Under 1 year" },
+  { value: "1to2", label: "1 to 2 years" },
+  { value: "2to3", label: "2 to 3 years" },
+  { value: "gt3", label: "3+ years" },
+];
+
+export type MindsetPulse = {
+  consistency: {
+    count: number;
+    avg: number | null; // 0..10, one decimal
+    below5: number;
+    below5Pct: number;
+    below3: number;
+    below3Pct: number;
+    distribution: number[]; // 11 counts, index = rating 0..10
+  };
+  years: { value: string; label: string; count: number; pct: number }[];
+  yearsTwoPlusPct: number; // 2+ years (the stage debrief line)
+};
+
+export function mindsetPulse(subs: DecodedSubmission[]): MindsetPulse {
+  const cons = subs
+    .map((s) => s.consistency)
+    .filter((v): v is number => typeof v === "number");
+  const distribution = Array.from({ length: 11 }, () => 0);
+  cons.forEach((v) => {
+    if (v >= 0 && v <= 10) distribution[v] += 1;
+  });
+  const count = cons.length;
+  const below5 = cons.filter((v) => v < 5).length;
+  const below3 = cons.filter((v) => v < 3).length;
+  const avg =
+    count > 0 ? Math.round((cons.reduce((a, b) => a + b, 0) / count) * 10) / 10 : null;
+
+  const yearsCounts = new Map<string, number>();
+  let yearsTotal = 0;
+  for (const s of subs) {
+    if (s.yearsPlanning) {
+      yearsCounts.set(s.yearsPlanning, (yearsCounts.get(s.yearsPlanning) ?? 0) + 1);
+      yearsTotal += 1;
+    }
+  }
+  const years = YEARS_META.map((y) => {
+    const c = yearsCounts.get(y.value) ?? 0;
+    return {
+      value: y.value,
+      label: y.label,
+      count: c,
+      pct: yearsTotal > 0 ? Math.round((c / yearsTotal) * 100) : 0,
+    };
+  });
+  const twoPlus = (yearsCounts.get("2to3") ?? 0) + (yearsCounts.get("gt3") ?? 0);
+
+  return {
+    consistency: {
+      count,
+      avg,
+      below5,
+      below5Pct: count > 0 ? Math.round((below5 / count) * 100) : 0,
+      below3,
+      below3Pct: count > 0 ? Math.round((below3 / count) * 100) : 0,
+      distribution,
+    },
+    years,
+    yearsTwoPlusPct: yearsTotal > 0 ? Math.round((twoPlus / yearsTotal) * 100) : 0,
+  };
+}
+
 function emptyTierCounts(): Record<Tier, number> {
   return {
     "Invisible to Recruiters": 0,

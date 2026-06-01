@@ -16,12 +16,19 @@ export default function LivePollPage({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const initialKey = first(searchParams.key);
+  const sectionRaw = Number(first(searchParams.section));
+  const initialSection = Number.isInteger(sectionRaw) ? sectionRaw : undefined;
+  const initialStage = first(searchParams.stage) === "1";
 
   return (
     <>
       <Header />
       <main className="mx-auto max-w-6xl px-5">
-        <LivePoll initialKey={initialKey} />
+        <LivePoll
+          initialKey={initialKey}
+          initialSection={initialSection}
+          initialStage={initialStage}
+        />
       </main>
     </>
   );

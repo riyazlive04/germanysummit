@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
-import { getAppConfig, setAllowAllRetakes } from "@/lib/config";
+import {
+  getAppConfig,
+  setAllowAllRetakes,
+  setSeatsTotal,
+  adjustSeatsClaimed,
+  setSeatsClaimed,
+} from "@/lib/config";
+import { intentScore, buildMirror, buildFollowup } from "@/lib/insights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +22,7 @@ function authorized(req: Request): boolean {
 }
 
 function slim(row: ReturnType<typeof decodeSubmission>) {
+  const intent = intentScore(row);
   return {
     id: row.id,
     name: row.name,
@@ -24,6 +32,13 @@ function slim(row: ReturnType<typeof decodeSubmission>) {
     totalScore: row.totalScore,
     tier: row.tier,
     archetype: row.archetype,
+    weakestDim: row.weakestDim,
+    consistency: row.consistency,
+    yearsPlanning: row.yearsPlanning,
+    intentScore: intent.score,
+    intentLabel: intent.label,
+    mirror: buildMirror(row),
+    followup: buildFollowup(row),
     retakeAllowed: row.retakeAllowed,
     roadmapRegenAllowed: row.roadmapRegenAllowed,
     hasReality: row.totalScore != null,
@@ -45,6 +60,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     allowAllRetakes: config.allowAllRetakes,
+    seats: { total: config.seatsTotal, claimed: config.seatsClaimed },
     records: rows.map((r) => slim(decodeSubmission(r))),
   });
 }
@@ -56,6 +72,9 @@ type Action =
   | { action: "lockRoadmap"; id: string }
   | { action: "delete"; id: string }
   | { action: "setGlobalAllow"; value: boolean }
+  | { action: "setSeatsTotal"; value: number }
+  | { action: "seatsClaimedDelta"; value: number }
+  | { action: "setSeatsClaimed"; value: number }
   | { action: "resetAll" };
 
 /** Admin mutations: per-user retake allow/lock, delete, global allow, reset all. */
@@ -102,6 +121,15 @@ export async function POST(req: Request) {
         break;
       case "setGlobalAllow":
         await setAllowAllRetakes(!!body.value);
+        break;
+      case "setSeatsTotal":
+        await setSeatsTotal(Number(body.value) || 0);
+        break;
+      case "seatsClaimedDelta":
+        await adjustSeatsClaimed(Number(body.value) || 0);
+        break;
+      case "setSeatsClaimed":
+        await setSeatsClaimed(Number(body.value) || 0);
         break;
       case "resetAll":
         // Turn the global override off AND re-lock everyone (fresh state).

@@ -18,8 +18,15 @@ import CaptureGate, { type Identity } from "./CaptureGate";
  * webhook fails (CONTEXT.md §8 / integration contract).
  */
 
-type Phase = "intro" | "quiz" | "capture" | "result" | "locked";
+type Phase = "intro" | "quiz" | "context" | "capture" | "result" | "locked";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+const YEARS_OPTIONS: { value: string; label: string }[] = [
+  { value: "lt1", label: "Under 1 year" },
+  { value: "1to2", label: "1 to 2 years" },
+  { value: "2to3", label: "2 to 3 years" },
+  { value: "gt3", label: "3+ years" },
+];
 
 export default function QuizFlow({
   ff,
@@ -36,6 +43,9 @@ export default function QuizFlow({
     Array(TOTAL_QUESTIONS).fill(null),
   );
   const [result, setResult] = useState<ScoreResult | null>(null);
+  // Emotional-context inputs collected after the 10 questions (stage playbook).
+  const [consistency, setConsistency] = useState<number | null>(null);
+  const [yearsPlanning, setYearsPlanning] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [identity, setIdentity] = useState<Identity>({
     name: ff?.name,
@@ -81,6 +91,8 @@ export default function QuizFlow({
         body: JSON.stringify({
           ...id,
           answers: finalAnswers,
+          consistency,
+          yearsPlanning,
           session: session ?? "pre_event",
           source: source ?? "reality-check",
         }),
@@ -101,6 +113,8 @@ export default function QuizFlow({
     setAnswers(Array(TOTAL_QUESTIONS).fill(null));
     setIndex(0);
     setResult(null);
+    setConsistency(null);
+    setYearsPlanning(null);
     setLocked(false);
     setSaveStatus("idle");
     setPhase("intro");
@@ -141,9 +155,16 @@ export default function QuizFlow({
         setIndex(index + 1);
         setLocked(false);
       } else {
-        void finish(next as number[]);
+        // After the last scored question, collect the two context inputs.
+        setPhase("context");
+        setLocked(false);
       }
     }, 260);
+  }
+
+  function submitContext() {
+    if (consistency === null || !yearsPlanning) return;
+    void finish(answers as number[]);
   }
 
   function back() {
@@ -254,6 +275,75 @@ export default function QuizFlow({
       <div className="animate-rise py-8">
         <ResultView result={result} onRestart={reset} />
         <DeliveryNote status={saveStatus} hasPhone={!!identity.phone} />
+      </div>
+    );
+  }
+
+  // ── Context (consistency + years, after the 10 questions) ─────────────────
+  if (phase === "context") {
+    return (
+      <div className="mx-auto max-w-2xl animate-rise py-12">
+        <span className="eyebrow">Last two — be honest</span>
+        <h1 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
+          Before your score, two honest reads.
+        </h1>
+
+        {/* Consistency 0-10 */}
+        <div className="mt-9">
+          <p className="font-display text-xl leading-snug">
+            Over the last 6 months, how consistent have you been with your Germany
+            plan?
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {Array.from({ length: 11 }, (_, n) => (
+              <button
+                key={n}
+                onClick={() => setConsistency(n)}
+                className={`nums h-11 w-11 rounded-xl border-2 font-display text-lg transition-all ${
+                  consistency === n
+                    ? "border-gold bg-gold text-gold-ink"
+                    : "border-[var(--line)] text-muted hover:border-[var(--anchor-hi)]"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-muted">
+            <span>0 — barely touched it</span>
+            <span>10 — every single week</span>
+          </div>
+        </div>
+
+        {/* Years planning */}
+        <div className="mt-9">
+          <p className="font-display text-xl leading-snug">
+            How long have you been planning a German career?
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {YEARS_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => setYearsPlanning(o.value)}
+                className={`rounded-[14px] border-2 p-4 text-left text-[15px] transition-all ${
+                  yearsPlanning === o.value
+                    ? "border-gold bg-[var(--gold-glow)] font-medium text-text"
+                    : "border-[var(--line)] text-muted hover:border-[var(--anchor-hi)]"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={submitContext}
+          disabled={consistency === null || !yearsPlanning}
+          className="btn-gold mt-10 px-8 py-4 text-[15px] disabled:opacity-50"
+        >
+          See my Readiness Score →
+        </button>
       </div>
     );
   }

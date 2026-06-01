@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
-import { answerDistribution } from "@/lib/aggregate";
+import { answerDistribution, mindsetPulse } from "@/lib/aggregate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,5 +49,6 @@ export async function GET(req: Request) {
     generatedAt: new Date().toISOString(),
     sessionFilter: validFilter ?? null,
     ...answerDistribution(scoped),
+    mindset: mindsetPulse(scoped),
   });
 }
