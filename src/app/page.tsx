@@ -80,7 +80,7 @@ export default function Home() {
                   "linear-gradient(to top, var(--anchor) 0%, var(--anchor) 45%, rgba(15,61,46,0.55) 75%, rgba(15,61,46,0) 100%)",
               }}
             >
-              <span className="eyebrow !text-gold-soft">Ameen Rahaman</span>
+              <span className="eyebrow !text-gold-soft">Ameen</span>
               <p className="mt-1 text-sm text-on-anchor">
                 Founder, B2 Consultants · 350+ engineers coached into Germany.
               </p>
