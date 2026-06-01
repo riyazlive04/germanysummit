@@ -113,7 +113,7 @@ export default function LinkedinResult({
       <section className="card p-7">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="font-display text-lg">Sections to strengthen</h3>
-          <span className="label-mono !text-[0.6rem]">flagged, not rewritten</span>
+          <span className="label-mono !text-[0.68rem]">flagged, not rewritten</span>
         </div>
         {review.sectionFlags.length ? (
           <ul className="mt-4 grid gap-3">

@@ -345,7 +345,7 @@ function Histogram({ distribution }: { distribution: number[] }) {
             className="w-full rounded-t-md bg-gold transition-[height] duration-500 ease-out"
             style={{ height: `${(n / max) * 100}%`, minHeight: n > 0 ? 4 : 0 }}
           />
-          <span className="label-mono !text-[0.6rem]">{DIST_BUCKETS[i].label}</span>
+          <span className="label-mono !text-[0.68rem]">{DIST_BUCKETS[i].label}</span>
         </div>
       ))}
     </div>

@@ -10,12 +10,13 @@ const fraunces = Fraunces({
   weight: ["400", "500", "600", "700"],
 });
 
-// Body - Hanken Grotesk
+// Body - Hanken Grotesk, loaded as a VARIABLE font (no fixed weight list) so the
+// body's font-weight:460 resolves to the true instance instead of snapping to the
+// nearest static weight.
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-hanken",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
 });
 
 // Data / labels - Space Mono
@@ -49,15 +50,17 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0f0d",
+  themeColor: "#f6f4ec",
   width: "device-width",
   initialScale: 1,
 };
 
 // Runs before first paint to set the theme from a saved preference, avoiding a
-// flash of the wrong theme. Dark is the default brand identity when nothing is
-// stored. Kept tiny and inlined so it executes synchronously in <head>.
-const themeInit = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+// flash of the wrong theme. LIGHT is the default for the event: the summit hall
+// is bright, where dark-on-light reads easier on phones. Dark stays one toggle
+// away and is remembered once chosen. Kept tiny and inlined so it runs
+// synchronously in <head>.
+const themeInit = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark')t='light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
 export default function RootLayout({
   children,

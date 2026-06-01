@@ -161,7 +161,7 @@ export default function CvResult({
       <section className="card p-7">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="font-display text-lg">Bullets to strengthen</h3>
-          <span className="label-mono !text-[0.6rem]">flagged, not rewritten</span>
+          <span className="label-mono !text-[0.68rem]">flagged, not rewritten</span>
         </div>
         <p className="mt-1.5 text-sm text-muted">
           Responsibility-style lines that should become measurable, result-based

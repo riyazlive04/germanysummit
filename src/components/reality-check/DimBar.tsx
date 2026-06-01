@@ -33,7 +33,7 @@ export default function DimBar({
         <span className="text-sm font-medium">
           {meta.short}
           {isWeakest && (
-            <span className="label-mono ml-2 !text-[0.6rem] !text-red">
+            <span className="label-mono ml-2 !text-[0.68rem] !text-red">
               weakest
             </span>
           )}

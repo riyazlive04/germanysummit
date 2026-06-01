@@ -202,7 +202,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                   {r.phone && <div className="text-xs text-muted">{r.phone}</div>}
                 </Td>
                 <Td>
-                  <span className="eyebrow !text-[0.6rem] !text-muted">
+                  <span className="eyebrow !text-[0.68rem] !text-muted">
                     {r.session.replace("_", " ")}
                   </span>
                 </Td>

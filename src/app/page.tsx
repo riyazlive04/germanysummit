@@ -32,22 +32,24 @@ export default function Home() {
       <Header />
 
       <main className="mx-auto max-w-6xl px-5">
-        {/* Hero */}
-        <section className="grid items-center gap-12 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1.35fr_0.85fr]">
+        {/* Hero. Sizes + spacing tuned so the whole pitch (headline, sub, both
+            CTAs, and the trust line) clears the fold on phone and laptop, while
+            keeping the headline bold and body text at readable sizes. */}
+        <section className="grid items-center gap-8 pb-14 pt-8 sm:gap-12 sm:pb-20 sm:pt-12 lg:grid-cols-[1.35fr_0.85fr]">
           <div>
             <span className="eyebrow">The Reality Check · Germany Career Summit 2026</span>
-            <h1 className="mt-6 font-display text-[2.6rem] leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="mt-4 font-display text-[2.05rem] leading-[1.03] tracking-tight sm:mt-5 sm:text-5xl lg:text-6xl">
               See exactly where you stand on{" "}
               <span className="text-gold">Germany</span> - before you change a
               thing.
             </h1>
-            <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted sm:mt-5 sm:text-lg">
               For Indian engineers who&apos;ve applied to dozens of German jobs and
               heard nothing back. Not motivation - a mirror. Score your readiness,
               see what&apos;s breaking your CV, and leave with a 90-day plan.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-7 sm:gap-4">
               <Link href="/reality-check" className="btn-gold px-7 py-3.5 text-[15px]">
                 Start the Reality Check →
               </Link>
@@ -55,7 +57,7 @@ export default function Home() {
                 View my result
               </Link>
             </div>
-            <span className="eyebrow mt-5 block !text-muted">
+            <span className="eyebrow mt-4 block !text-muted">
               5 dimensions · ~90 seconds · powered by Ameen&apos;s inside-Germany method
             </span>
           </div>
@@ -105,7 +107,7 @@ export default function Home() {
               </div>
               <h2 className="font-display text-2xl">{m.name}</h2>
               <p className="text-[15px] leading-relaxed text-muted">{m.line}</p>
-              <p className="eyebrow mt-auto !text-[0.62rem] !text-muted">{m.payoff}</p>
+              <p className="eyebrow mt-auto !text-[0.7rem] !text-muted">{m.payoff}</p>
             </Link>
           ))}
         </section>
