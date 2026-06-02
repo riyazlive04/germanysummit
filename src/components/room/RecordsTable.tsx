@@ -126,7 +126,11 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
     void load();
   }, [authed, key, load]);
 
-  async function act(body: object) {
+  // Optimistic: apply the local change immediately so the click feels instant,
+  // POST in the background, then reconcile with a (non-blocking) reload. The DB
+  // is remote, so awaiting the write + a full refetch made every click lag.
+  async function act(body: object, optimistic?: () => void) {
+    optimistic?.();
     setBusy(true);
     try {
       await fetch("/api/room/records", {
@@ -134,9 +138,9 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         headers: { "Content-Type": "application/json", "x-admin-key": keyRef.current },
         body: JSON.stringify(body),
       });
-      await load();
     } finally {
       setBusy(false);
+      void load(); // reconcile in the background; the UI already updated
     }
   }
 
@@ -256,7 +260,15 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             Export CSV
           </button>
           <button
-            onClick={() => act({ action: "resetAll" })}
+            onClick={() =>
+              act({ action: "resetAll" }, () => {
+                setAllowAll(false);
+                setEventDay(false);
+                setRecords((rs) =>
+                  rs.map((x) => ({ ...x, retakeAllowed: false, roadmapRegenAllowed: false })),
+                );
+              })
+            }
             disabled={busy}
             className="btn btn-ghost px-4 py-2 text-sm"
           >
@@ -280,13 +292,21 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             accent
             program={seats.guided}
             busy={busy}
-            onSetTotal={(t) => act({ action: "setSeatsTotal", value: t })}
+            onSetTotal={(t) =>
+              act({ action: "setSeatsTotal", value: t }, () =>
+                setSeats((s) => ({ ...s, guided: { ...s.guided, total: t } })),
+              )
+            }
           />
           <ProgramSummary
             label="Solo Mode"
             program={seats.solo}
             busy={busy}
-            onSetTotal={(t) => act({ action: "setSoloTotal", value: t })}
+            onSetTotal={(t) =>
+              act({ action: "setSoloTotal", value: t }, () =>
+                setSeats((s) => ({ ...s, solo: { ...s.solo, total: t } })),
+              )
+            }
           />
         </div>
       </div>
@@ -298,7 +318,9 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           desc="Turn on for the arrival and end-of-day pulses, then off."
           on={allowAll}
           busy={busy}
-          onToggle={() => act({ action: "setGlobalAllow", value: !allowAll })}
+          onToggle={() =>
+            act({ action: "setGlobalAllow", value: !allowAll }, () => setAllowAll(!allowAll))
+          }
         />
         <div className="h-px bg-[var(--line)]" />
         <ToggleRow
@@ -306,7 +328,9 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           desc="Let people who already took it retake on the day - the quiz shows their previous answer under each question."
           on={eventDay}
           busy={busy}
-          onToggle={() => act({ action: "setEventDay", value: !eventDay })}
+          onToggle={() =>
+            act({ action: "setEventDay", value: !eventDay }, () => setEventDay(!eventDay))
+          }
         />
       </div>
 
@@ -378,7 +402,13 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                   <EnrollCell
                     program={r.enrolledProgram}
                     busy={busy}
-                    onEnroll={(p) => act({ action: "enroll", id: r.id, program: p })}
+                    onEnroll={(p) =>
+                      act({ action: "enroll", id: r.id, program: p }, () =>
+                        setRecords((rs) =>
+                          rs.map((x) => (x.id === r.id ? { ...x, enrolledProgram: p } : x)),
+                        ),
+                      )
+                    }
                   />
                 </Td>
                 <Td>
@@ -406,7 +436,13 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                 <Td>
                   {r.retakeAllowed ? (
                     <button
-                      onClick={() => act({ action: "lock", id: r.id })}
+                      onClick={() =>
+                        act({ action: "lock", id: r.id }, () =>
+                          setRecords((rs) =>
+                            rs.map((x) => (x.id === r.id ? { ...x, retakeAllowed: false } : x)),
+                          ),
+                        )
+                      }
                       disabled={busy}
                       className="chip !border-green text-green"
                     >
@@ -414,7 +450,13 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                     </button>
                   ) : (
                     <button
-                      onClick={() => act({ action: "allowRetake", id: r.id })}
+                      onClick={() =>
+                        act({ action: "allowRetake", id: r.id }, () =>
+                          setRecords((rs) =>
+                            rs.map((x) => (x.id === r.id ? { ...x, retakeAllowed: true } : x)),
+                          ),
+                        )
+                      }
                       disabled={busy}
                       className="chip hover:!border-gold"
                     >
@@ -427,7 +469,15 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                     <span className="text-xs text-muted">-</span>
                   ) : r.roadmapRegenAllowed ? (
                     <button
-                      onClick={() => act({ action: "lockRoadmap", id: r.id })}
+                      onClick={() =>
+                        act({ action: "lockRoadmap", id: r.id }, () =>
+                          setRecords((rs) =>
+                            rs.map((x) =>
+                              x.id === r.id ? { ...x, roadmapRegenAllowed: false } : x,
+                            ),
+                          ),
+                        )
+                      }
                       disabled={busy}
                       className="chip !border-green text-green"
                     >
@@ -435,7 +485,15 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                     </button>
                   ) : (
                     <button
-                      onClick={() => act({ action: "allowRoadmap", id: r.id })}
+                      onClick={() =>
+                        act({ action: "allowRoadmap", id: r.id }, () =>
+                          setRecords((rs) =>
+                            rs.map((x) =>
+                              x.id === r.id ? { ...x, roadmapRegenAllowed: true } : x,
+                            ),
+                          ),
+                        )
+                      }
                       disabled={busy}
                       className="chip hover:!border-gold"
                     >
@@ -460,7 +518,9 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                   <button
                     onClick={() => {
                       if (confirm(`Delete ${r.email}? This cannot be undone.`))
-                        void act({ action: "delete", id: r.id });
+                        void act({ action: "delete", id: r.id }, () =>
+                          setRecords((rs) => rs.filter((x) => x.id !== r.id)),
+                        );
                     }}
                     disabled={busy}
                     className="text-xs text-muted transition-colors hover:text-red"

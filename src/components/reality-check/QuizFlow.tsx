@@ -176,7 +176,7 @@ export default function QuizFlow({
         setPhase("context");
         setLocked(false);
       }
-    }, 260);
+    }, 150);
   }
 
   function submitContext() {
