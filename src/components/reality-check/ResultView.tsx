@@ -53,6 +53,17 @@ export default function ResultView({
   const accent = tierColorVar[tierMeta.color];
   const archetype = getArchetype(weakestDim);
 
+  // When every dimension is equally high (no spread), or even the weakest one is
+  // already strong, there is no single "weakest" to flag. Don't brand a strong or
+  // perfect result with a limiting-belief archetype and a red "weakest" marker
+  // (this is what made a 100/100 show "The Invisible Profile · Profile weakest").
+  const dimValues = Object.values(dimScores);
+  const lo = Math.min(...dimValues);
+  const hi = Math.max(...dimValues);
+  const strongAcross = lo >= 0.84;
+  const noClearGap = hi - lo < 1e-9 || strongAcross;
+  const showWeakest = !noClearGap;
+
   return (
     <div className="grid gap-5">
       {/* ── Germany Readiness Score (hero) ─────────────────────────────── */}
@@ -86,32 +97,54 @@ export default function ResultView({
         </div>
       </section>
 
-      {/* ── Archetype reveal (named identity: false belief → reframe) ───── */}
-      <section className="panel-anchor p-8 sm:p-10">
-        <span className="eyebrow">Your Archetype</span>
-        <h2 className="mt-3 font-display text-4xl text-gold sm:text-5xl">
-          {archetype.name}
-        </h2>
-        <p className="mt-3 text-[15px] text-[color:rgba(245,242,234,0.7)]">
-          Set by your weakest dimension - {DIM_META[weakestDim].short}. Name the
-          pattern, and it stops running you.
-        </p>
+      {/* ── Archetype reveal, or the strong-across read when there's no gap ── */}
+      {showWeakest ? (
+        <section className="panel-anchor p-8 sm:p-10">
+          <span className="eyebrow">Your Archetype</span>
+          <h2 className="mt-3 font-display text-4xl text-gold sm:text-5xl">
+            {archetype.name}
+          </h2>
+          <p className="mt-3 text-[15px] text-[color:rgba(245,242,234,0.7)]">
+            Set by your weakest dimension - {DIM_META[weakestDim].short}. Name the
+            pattern, and it stops running you.
+          </p>
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-[14px] border border-[color:rgba(224,83,61,0.4)] bg-[color:rgba(224,83,61,0.1)] p-5">
-            <span className="eyebrow !text-red">The belief holding you back</span>
-            <p className="mt-2.5 font-display text-xl leading-snug text-on-anchor">
-              &ldquo;{archetype.falseBelief}&rdquo;
-            </p>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[14px] border border-[color:rgba(224,83,61,0.4)] bg-[color:rgba(224,83,61,0.1)] p-5">
+              <span className="eyebrow !text-red">The belief holding you back</span>
+              <p className="mt-2.5 font-display text-xl leading-snug text-on-anchor">
+                &ldquo;{archetype.falseBelief}&rdquo;
+              </p>
+            </div>
+            <div className="rounded-[14px] border border-[color:rgba(240,180,41,0.4)] bg-[color:rgba(240,180,41,0.1)] p-5">
+              <span className="eyebrow !text-gold">The reframe</span>
+              <p className="mt-2.5 text-[15px] leading-relaxed text-on-anchor">
+                {archetype.reframe}
+              </p>
+            </div>
           </div>
-          <div className="rounded-[14px] border border-[color:rgba(240,180,41,0.4)] bg-[color:rgba(240,180,41,0.1)] p-5">
-            <span className="eyebrow !text-gold">The reframe</span>
+        </section>
+      ) : (
+        <section className="panel-anchor p-8 sm:p-10">
+          <span className="eyebrow">Your read</span>
+          <h2 className="mt-3 font-display text-4xl text-gold sm:text-5xl">
+            {strongAcross ? "Strong across the board." : "Evenly matched."}
+          </h2>
+          <p className="mt-3 text-[15px] text-[color:rgba(245,242,234,0.7)]">
+            {strongAcross
+              ? "All five dimensions are firing. There is no single gap dragging you down."
+              : "Your five dimensions are level - no single weakest one to blame."}
+          </p>
+          <div className="mt-7 rounded-[14px] border border-[color:rgba(240,180,41,0.4)] bg-[color:rgba(240,180,41,0.1)] p-5">
+            <span className="eyebrow !text-gold">What to do with this</span>
             <p className="mt-2.5 text-[15px] leading-relaxed text-on-anchor">
-              {archetype.reframe}
+              {strongAcross
+                ? "You're operating like someone who lands offers. Keep the system running week to week - and help the room level up."
+                : "The lift comes from raising all five together, week by week - a written system, not a single fix."}
             </p>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Profile Assessment · Skills Evaluation ─────────────────────── */}
       <div className="grid gap-5 sm:grid-cols-2">
@@ -125,12 +158,12 @@ export default function ResultView({
             <DimBar
               dim="Profile"
               score={dimScores["Profile"]}
-              isWeakest={weakestDim === "Profile"}
+              isWeakest={showWeakest && weakestDim === "Profile"}
             />
             <DimBar
               dim="Strategy"
               score={dimScores["Strategy"]}
-              isWeakest={weakestDim === "Strategy"}
+              isWeakest={showWeakest && weakestDim === "Strategy"}
             />
           </div>
         </section>
@@ -145,7 +178,7 @@ export default function ResultView({
             <DimBar
               dim="German & Skills"
               score={dimScores["German & Skills"]}
-              isWeakest={weakestDim === "German & Skills"}
+              isWeakest={showWeakest && weakestDim === "German & Skills"}
             />
           </div>
         </section>
@@ -159,34 +192,58 @@ export default function ResultView({
             <DimBar
               dim="Mindset"
               score={dimScores["Mindset"]}
-              isWeakest={weakestDim === "Mindset"}
+              isWeakest={showWeakest && weakestDim === "Mindset"}
             />
             <DimBar
               dim="90-Day Plan"
               score={dimScores["90-Day Plan"]}
-              isWeakest={weakestDim === "90-Day Plan"}
+              isWeakest={showWeakest && weakestDim === "90-Day Plan"}
             />
           </div>
 
-          {/* Weakest-dimension spotlight - directional, points to the fix */}
-          <div
-            className="rounded-xl border p-5"
-            style={{ borderColor: "var(--red)", background: "rgba(224,83,61,0.09)" }}
-          >
-            <span className="label-mono !text-red">Start here</span>
-            <h4 className="mt-2 font-display text-lg">
-              {weakestDimSpotlightTitle(weakestDim)}
-            </h4>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              {DIM_META[weakestDim].weak}
-            </p>
-            <p className="mt-4 text-sm leading-relaxed">
-              This is the single dimension dragging your score down most. It&apos;s
-              also exactly what the <span className="text-gold">Reality Check</span>{" "}
-              and <span className="text-gold">90-Day Roadmap</span> blocks at the
-              summit are built to fix - with the coach, not for you.
-            </p>
-          </div>
+          {/* Spotlight: the weakest dimension when there's a real gap, otherwise
+              a positive "no single gap" read for strong / balanced scores. */}
+          {showWeakest ? (
+            <div
+              className="rounded-xl border p-5"
+              style={{ borderColor: "var(--red)", background: "rgba(224,83,61,0.09)" }}
+            >
+              <span className="label-mono !text-red">Start here</span>
+              <h4 className="mt-2 font-display text-lg">
+                {weakestDimSpotlightTitle(weakestDim)}
+              </h4>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {DIM_META[weakestDim].weak}
+              </p>
+              <p className="mt-4 text-sm leading-relaxed">
+                This is the single dimension dragging your score down most. It&apos;s
+                also exactly what the <span className="text-gold">Reality Check</span>{" "}
+                and <span className="text-gold">90-Day Roadmap</span> blocks at the
+                summit are built to fix - with the coach, not for you.
+              </p>
+            </div>
+          ) : (
+            <div
+              className="rounded-xl border p-5"
+              style={{ borderColor: "var(--green)", background: "rgba(54,179,126,0.09)" }}
+            >
+              <span className="label-mono" style={{ color: "var(--green)" }}>
+                No single gap
+              </span>
+              <h4 className="mt-2 font-display text-lg">
+                {strongAcross ? "You're strong everywhere." : "All five are level."}
+              </h4>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {strongAcross
+                  ? "No dimension is dragging your score down. The work now is keeping the system running."
+                  : "No single dimension stands out as the drag - the gain is in lifting all five together."}
+              </p>
+              <p className="mt-4 text-sm leading-relaxed">
+                That is exactly what the <span className="text-gold">summit</span> and
+                the accountability sprint are built to sustain - with the coach.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -199,7 +256,7 @@ export default function ResultView({
         <div className="flex flex-wrap items-center gap-3">
           <ShareBar
             title="My Germany Readiness Score"
-            summary={`My Germany Readiness Score: ${totalScore}/100 - ${tier}. Archetype: ${archetype.name}. Where do you stand?`}
+            summary={`My Germany Readiness Score: ${totalScore}/100 - ${tier}.${showWeakest ? ` Archetype: ${archetype.name}.` : ""} Where do you stand?`}
           />
           {onRestart && (
             <button
