@@ -36,7 +36,9 @@ export async function evaluateLock(
 
   const config = await getAppConfig();
   const allowed =
-    config.allowAllRetakes || conflicts.some((c) => c.retakeAllowed);
+    config.allowAllRetakes ||
+    config.eventDayMode ||
+    conflicts.some((c) => c.retakeAllowed);
 
   return { taken: true, allowed, conflictIds: conflicts.map((c) => c.id) };
 }

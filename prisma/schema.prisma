@@ -95,6 +95,10 @@ model Submission {
 model AppConfig {
   id              String   @id @default("singleton")
   allowAllRetakes Boolean  @default(false) // global override: let anyone retake
+  // "Allow event day reality check": when on, a person who already took it can
+  // retake on the day, and the quiz shows their previous answer under each
+  // question (the morning answers, for the re-score).
+  eventDayMode    Boolean  @default(false)
   // Program targets for the buying window. Two programs sell on the day: Guided
   // Mode (8-10 seats, the scarcity hero) and Solo Mode (~25 target, the
   // downsell). Live counts + buyer names come from the per-person

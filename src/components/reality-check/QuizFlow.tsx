@@ -46,6 +46,8 @@ export default function QuizFlow({
   // Emotional-context inputs collected after the 10 questions (stage playbook).
   const [consistency, setConsistency] = useState<number | null>(null);
   const [yearsPlanning, setYearsPlanning] = useState<string | null>(null);
+  // Event-day re-score: this person's previous answers, shown under each question.
+  const [previousAnswers, setPreviousAnswers] = useState<number[] | null>(null);
   const [locked, setLocked] = useState(false);
   const [identity, setIdentity] = useState<Identity>({
     name: ff?.name,
@@ -61,14 +63,17 @@ export default function QuizFlow({
   // someone who already took it lands on the locked screen instead of the quiz.
   useEffect(() => {
     if (!ff?.email) return;
-    void checkLocked(ff.email, ff.phone).then((locked) => {
-      if (locked) setPhase("locked");
+    void fetchStatus(ff.email, ff.phone).then((s) => {
+      if (s.locked) setPhase("locked");
+      else if (s.previousAnswers) setPreviousAnswers(s.previousAnswers);
     });
     // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function checkLocked(email: string, phone?: string): Promise<boolean> {
+  type Status = { locked: boolean; previousAnswers: number[] | null };
+
+  async function fetchStatus(email: string, phone?: string): Promise<Status> {
     try {
       const res = await fetch("/api/reality-check/status", {
         method: "POST",
@@ -76,9 +81,12 @@ export default function QuizFlow({
         body: JSON.stringify({ email, phone }),
       });
       const data = await res.json();
-      return !!data.locked;
+      return {
+        locked: !!data.locked,
+        previousAnswers: Array.isArray(data.previousAnswers) ? data.previousAnswers : null,
+      };
     } catch {
-      return false; // fail open; the server still enforces the gate on save
+      return { locked: false, previousAnswers: null }; // fail open; server still gates on save
     }
   }
 
@@ -115,6 +123,7 @@ export default function QuizFlow({
     setResult(null);
     setConsistency(null);
     setYearsPlanning(null);
+    setPreviousAnswers(null);
     setLocked(false);
     setSaveStatus("idle");
     setPhase("intro");
@@ -129,9 +138,14 @@ export default function QuizFlow({
     const phoneDigits = (identity.phone ?? "").replace(/\D/g, "");
     if (identity.name?.trim() && identity.email && phoneDigits.length >= 10) {
       setChecking(true);
-      const isLocked = await checkLocked(identity.email, identity.phone);
+      const s = await fetchStatus(identity.email, identity.phone);
       setChecking(false);
-      setPhase(isLocked ? "locked" : "quiz");
+      if (s.locked) {
+        setPhase("locked");
+      } else {
+        setPreviousAnswers(s.previousAnswers);
+        setPhase("quiz");
+      }
     } else {
       setPhase("capture");
     }
@@ -234,10 +248,12 @@ export default function QuizFlow({
         defaults={identity}
         onSubmit={async (id) => {
           setIdentity(id);
-          if (await checkLocked(id.email, id.phone)) {
+          const s = await fetchStatus(id.email, id.phone);
+          if (s.locked) {
             setPhase("locked");
             return;
           }
+          setPreviousAnswers(s.previousAnswers);
           setPhase("quiz");
         }}
       />
@@ -415,6 +431,24 @@ export default function QuizFlow({
           })}
         </div>
       </div>
+
+      {/* Event-day re-score: the answer this person gave earlier */}
+      {previousAnswers &&
+        (() => {
+          const prev = previousAnswers[index];
+          const optIdx = q.options.findIndex((o) => o.points === prev);
+          if (optIdx < 0) return null;
+          const letter = String.fromCharCode(65 + optIdx);
+          return (
+            <div className="mt-7 rounded-[14px] border border-dashed border-[var(--gold-deep)] bg-[var(--gold-glow)] p-4">
+              <span className="label-mono !text-gold-deep">Your earlier answer</span>
+              <p className="mt-1.5 flex items-start gap-2 text-sm">
+                <span className="font-mono font-bold text-gold-deep">{letter}</span>
+                <span className="text-text">{q.options[optIdx].label}</span>
+              </p>
+            </div>
+          );
+        })()}
 
       {/* Back */}
       <div className="mt-9">

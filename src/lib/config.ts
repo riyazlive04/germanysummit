@@ -22,6 +22,15 @@ export async function setAllowAllRetakes(value: boolean) {
   });
 }
 
+/** Toggle "Allow event day reality check" (unlock retakes + show prior answers). */
+export async function setEventDayMode(value: boolean) {
+  return prisma.appConfig.upsert({
+    where: { id: SINGLETON },
+    create: { id: SINGLETON, eventDayMode: value },
+    update: { eventDayMode: value },
+  });
+}
+
 /** Set the Guided Mode capacity (target). Claimed is derived from enrollments. */
 export async function setSeatsTotal(total: number) {
   const seatsTotal = Math.max(0, Math.round(total));

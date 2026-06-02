@@ -64,6 +64,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [records, setRecords] = useState<Rec[]>([]);
   const [allowAll, setAllowAll] = useState(false);
+  const [eventDay, setEventDay] = useState(false);
   const [seats, setSeats] = useState<Seats>({
     guided: { total: 8, claimed: 0, buyers: [] },
     solo: { total: 25, claimed: 0, buyers: [] },
@@ -107,6 +108,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         setError(null);
         setRecords(data.records);
         setAllowAll(data.allowAllRetakes);
+        setEventDay(!!data.eventDayMode);
         if (data.seats) setSeats(data.seats);
         try {
           localStorage.setItem(STORAGE_KEY, k);
@@ -289,28 +291,23 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         </div>
       </div>
 
-      {/* Global override */}
-      <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 p-5">
-        <div>
-          <p className="font-medium">Allow everyone to retake</p>
-          <p className="text-sm text-muted">
-            Turn on for the arrival and end-of-day pulses, then off.
-          </p>
-        </div>
-        <button
-          onClick={() => act({ action: "setGlobalAllow", value: !allowAll })}
-          disabled={busy}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-            allowAll ? "bg-green" : "bg-[var(--surface-2)]"
-          }`}
-          aria-pressed={allowAll}
-        >
-          <span
-            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${
-              allowAll ? "left-6" : "left-1"
-            }`}
-          />
-        </button>
+      {/* Retake overrides */}
+      <div className="card mb-5 grid gap-4 p-5">
+        <ToggleRow
+          title="Allow everyone to retake"
+          desc="Turn on for the arrival and end-of-day pulses, then off."
+          on={allowAll}
+          busy={busy}
+          onToggle={() => act({ action: "setGlobalAllow", value: !allowAll })}
+        />
+        <div className="h-px bg-[var(--line)]" />
+        <ToggleRow
+          title="Allow event day reality check"
+          desc="Let people who already took it retake on the day - the quiz shows their previous answer under each question."
+          on={eventDay}
+          busy={busy}
+          onToggle={() => act({ action: "setEventDay", value: !eventDay })}
+        />
       </div>
 
       {/* Search + intent filters */}
@@ -483,6 +480,44 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/** A labelled on/off toggle row for an admin setting. */
+function ToggleRow({
+  title,
+  desc,
+  on,
+  busy,
+  onToggle,
+}: {
+  title: string;
+  desc: string;
+  on: boolean;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p className="font-medium">{title}</p>
+        <p className="max-w-xl text-sm text-muted">{desc}</p>
+      </div>
+      <button
+        onClick={onToggle}
+        disabled={busy}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+          on ? "bg-green" : "bg-[var(--surface-2)]"
+        }`}
+        aria-pressed={on}
+      >
+        <span
+          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${
+            on ? "left-6" : "left-1"
+          }`}
+        />
+      </button>
     </div>
   );
 }

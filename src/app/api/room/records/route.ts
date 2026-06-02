@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
 import { enrollmentSummary } from "@/lib/aggregate";
-import { getAppConfig, setAllowAllRetakes, setSeatsTotal, setSoloTotal } from "@/lib/config";
+import {
+  getAppConfig,
+  setAllowAllRetakes,
+  setEventDayMode,
+  setSeatsTotal,
+  setSoloTotal,
+} from "@/lib/config";
 import { intentScore, buildMirror, buildFollowup } from "@/lib/insights";
 
 export const runtime = "nodejs";
@@ -58,6 +64,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     allowAllRetakes: config.allowAllRetakes,
+    eventDayMode: config.eventDayMode,
     seats: {
       guided: { total: config.seatsTotal, claimed: enroll.guided.count, buyers: enroll.guided.buyers },
       solo: { total: config.soloTotal, claimed: enroll.solo.count, buyers: enroll.solo.buyers },
@@ -73,6 +80,7 @@ type Action =
   | { action: "lockRoadmap"; id: string }
   | { action: "delete"; id: string }
   | { action: "setGlobalAllow"; value: boolean }
+  | { action: "setEventDay"; value: boolean }
   | { action: "setSeatsTotal"; value: number }
   | { action: "setSoloTotal"; value: number }
   | { action: "enroll"; id: string; program: "guided" | "solo" | null }
@@ -123,6 +131,9 @@ export async function POST(req: Request) {
       case "setGlobalAllow":
         await setAllowAllRetakes(!!body.value);
         break;
+      case "setEventDay":
+        await setEventDayMode(!!body.value);
+        break;
       case "setSeatsTotal":
         await setSeatsTotal(Number(body.value) || 0);
         break;
@@ -138,8 +149,9 @@ export async function POST(req: Request) {
         break;
       }
       case "resetAll":
-        // Turn the global override off AND re-lock everyone (fresh state).
+        // Turn the global overrides off AND re-lock everyone (fresh state).
         await setAllowAllRetakes(false);
+        await setEventDayMode(false);
         await prisma.submission.updateMany({
           data: { retakeAllowed: false, roadmapRegenAllowed: false },
         });
