@@ -124,7 +124,10 @@ export default function QuizFlow({
   // the lock now; otherwise collect email/phone first. This way a returning or
   // locked person is recognized up front and never re-answers the questions.
   async function beginQuiz() {
-    if (identity.email) {
+    // All three identity fields are required. Only skip the capture gate when a
+    // FlexiFunnels pass-through already gave us name, email, AND phone.
+    const phoneDigits = (identity.phone ?? "").replace(/\D/g, "");
+    if (identity.name?.trim() && identity.email && phoneDigits.length >= 10) {
       setChecking(true);
       const isLocked = await checkLocked(identity.email, identity.phone);
       setChecking(false);

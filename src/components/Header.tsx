@@ -16,18 +16,16 @@ export default function Header() {
           aria-label="Germany Career Summit - home"
           className="flex items-center"
         >
-          {/* Official summit wordmark. White-backed badge so the colourful logo
-              reads cleanly on both the light and dark themes. */}
-          <span className="inline-flex items-center rounded-lg bg-white px-2 py-1 shadow-sm ring-1 ring-black/5">
-            <Image
-              src="/brand/summit-logo.png"
-              alt="Germany Career Summit · Chennai 2026"
-              width={279}
-              height={100}
-              priority
-              className="h-9 w-auto sm:h-10"
-            />
-          </span>
+          {/* Official summit wordmark, transparent so it floats free on both
+              the light and dark themes. */}
+          <Image
+            src="/brand/summit-logo.png"
+            alt="Germany Career Summit · Chennai 2026"
+            width={279}
+            height={100}
+            priority
+            className="h-10 w-auto sm:h-12"
+          />
         </Link>
 
         <div className="flex items-center gap-5">

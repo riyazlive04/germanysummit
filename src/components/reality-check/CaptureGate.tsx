@@ -5,9 +5,9 @@ import { useState } from "react";
 export type Identity = { name?: string; email: string; phone?: string };
 
 /**
- * Minimal email gate - shown only as a fallback when FlexiFunnels did NOT pass
- * an email (ff_email). One required field (email); name/phone optional. Honest
- * framing: this is how the result follows you home (WhatsApp), not a paywall.
+ * Identity gate before the quiz. All three fields are required: first name,
+ * email, and a WhatsApp number - this is how the result follows them home and
+ * how the team reaches them. Honest framing: not a paywall, just delivery.
  */
 export default function CaptureGate({
   defaults,
@@ -23,16 +23,23 @@ export default function CaptureGate({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const digits = phone.replace(/\D/g, "");
+
+    if (!trimmedName) {
+      setError("Enter your first name.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError("Enter a valid email so we can send your result.");
       return;
     }
-    onSubmit({
-      name: name.trim() || undefined,
-      email: trimmed,
-      phone: phone.trim() || undefined,
-    });
+    if (digits.length < 10) {
+      setError("Enter a valid WhatsApp number with country code.");
+      return;
+    }
+    onSubmit({ name: trimmedName, email: trimmedEmail, phone: phone.trim() });
   }
 
   return (
@@ -48,14 +55,18 @@ export default function CaptureGate({
       </p>
 
       <form onSubmit={submit} className="mt-7 grid gap-4">
-        <Field label="First name (optional)">
+        <Field label="First name">
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError(null);
+            }}
             placeholder="Priya"
             className="input"
             autoComplete="given-name"
+            required
           />
         </Field>
 
@@ -74,14 +85,18 @@ export default function CaptureGate({
           />
         </Field>
 
-        <Field label="WhatsApp number (optional)">
+        <Field label="WhatsApp number">
           <input
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              setError(null);
+            }}
             placeholder="+91 …"
             className="input"
             autoComplete="tel"
+            required
           />
         </Field>
 

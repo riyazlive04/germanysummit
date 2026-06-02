@@ -65,6 +65,19 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  // Name and WhatsApp number are required (enforced on the server too).
+  if (!body.name?.trim()) {
+    return NextResponse.json(
+      { ok: false, error: "Your first name is required." },
+      { status: 400 },
+    );
+  }
+  if ((body.phone ?? "").replace(/\D/g, "").length < 10) {
+    return NextResponse.json(
+      { ok: false, error: "A valid WhatsApp number is required." },
+      { status: 400 },
+    );
+  }
 
   const answers = body.answers;
   const result = score(answers);
