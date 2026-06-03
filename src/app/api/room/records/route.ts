@@ -47,6 +47,7 @@ function slim(row: ReturnType<typeof decodeSubmission>) {
     hasCv: row.cvAtsScore != null,
     hasLinkedin: row.linkedinScore != null,
     hasRoadmap: row.roadmap != null,
+    hasPlaybook: row.playbookAt != null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -85,6 +85,10 @@ model Submission {
   enrolledProgram String? //   'guided' | 'solo'
   enrolledAt      DateTime?
 
+  // Tagged when this person downloaded The Secret Playbook (the free lead magnet).
+  // We tag the EXISTING profile rather than capturing a separate lead.
+  playbookAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

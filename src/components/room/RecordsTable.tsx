@@ -45,6 +45,7 @@ type Rec = {
   hasCv: boolean;
   hasLinkedin: boolean;
   hasRoadmap: boolean;
+  hasPlaybook: boolean;
   createdAt: string;
 };
 
@@ -428,6 +429,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
                     <Badge on={r.hasCv}>CV</Badge>
                     <Badge on={r.hasLinkedin}>LI</Badge>
                     <Badge on={r.hasRoadmap}>RM</Badge>
+                    <Badge on={r.hasPlaybook}>PB</Badge>
                   </div>
                 </Td>
                 <Td>
