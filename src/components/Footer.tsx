@@ -15,6 +15,18 @@ export default function Footer() {
             <span>20 June 2026 · 10:00-16:00 IST</span>
           </div>
         </div>
+
+        <div className="mt-10 border-t border-[var(--line)] pt-6 text-center text-xs text-muted">
+          Developed by{" "}
+          <a
+            href="https://sirahdigital.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-text underline-offset-2 transition-colors hover:text-gold"
+          >
+            Sirah Digital
+          </a>
+        </div>
       </div>
     </footer>
   );
