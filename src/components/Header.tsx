@@ -2,11 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeToggle from "./ThemeToggle";
 
-// For the summit, the suite leads with the Reality Check. The CV & LinkedIn Lab
-// and the 90-Day Roadmap are intentionally not surfaced here: the Lab is hidden,
-// and the roadmap is shared later as a direct link. Their routes still work.
-const NAV = [{ href: "/reality-check", label: "Reality Check" }];
-
+// For the summit, the suite leads with the Reality Check - a single CTA, shown
+// on every device. The CV & LinkedIn Lab and the 90-Day Roadmap are intentionally
+// not surfaced here (Lab hidden; roadmap shared later as a direct link). Their
+// routes still work.
 export default function Header() {
   return (
     <header className="no-print sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--header-bg)] backdrop-blur-xl">
@@ -28,21 +27,12 @@ export default function Header() {
           />
         </Link>
 
-        <div className="flex items-center gap-5">
-          <nav className="hidden items-center gap-7 text-sm font-medium text-muted md:flex">
-            {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="transition-colors hover:text-text"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Hidden on the info-collection (capture) step - see globals.css
+              [data-hide-cta]; the quiz toggles it so the gate stays focused. */}
           <Link
             href="/reality-check"
-            className="btn-gold hidden px-4 py-2 text-[13px] sm:inline-flex"
+            className="header-cta btn-gold inline-flex px-3.5 py-2 text-[13px] sm:px-4"
           >
             Start free →
           </Link>

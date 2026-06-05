@@ -26,6 +26,7 @@ export type ScoreResult = {
   tier: Tier;
   weakestDim: Dimension;
   archetype: string; // name of the archetype for the weakest dimension
+  hasWeakness: boolean; // is there a single weakest worth flagging? (see hasClearWeakness)
 };
 
 const MAX_POINTS_PER_Q = 3;
@@ -70,6 +71,31 @@ export function getWeakestDim(dimScores: DimScores): Dimension {
   return weakest;
 }
 
+/**
+ * A dimension at/above this normalized score (0..1) is "already strong".
+ * Dimension scores are quantized to multiples of 1/6, so 0.8 makes the top
+ * non-perfect value (5/6 ≈ 0.833) qualify - i.e. a board where even the lowest
+ * dimension is strong reads as "strong across the board", not "weakest: X".
+ */
+export const STRONG_DIM_THRESHOLD = 0.8;
+
+/**
+ * Whether there is a single, meaningful weakest dimension worth flagging.
+ * There is NOT one when every dimension is equal (no spread) or even the
+ * lowest dimension is already strong. The single source of truth for the
+ * result UI, the persisted row, and the WhatsApp follow-up - so a strong or
+ * perfect attendee is never branded with a "weakest" marker or a limiting
+ * archetype in any of them.
+ */
+export function hasClearWeakness(dimScores: DimScores): boolean {
+  const values = Object.values(dimScores);
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const evenlyMatched = hi - lo < 1e-9;
+  const strongAcross = lo >= STRONG_DIM_THRESHOLD;
+  return !(evenlyMatched || strongAcross);
+}
+
 /** Full score result from the raw answers. */
 export function score(answers: Answers): ScoreResult {
   const dimScores = computeDimScores(answers);
@@ -81,6 +107,7 @@ export function score(answers: Answers): ScoreResult {
     tier: getTier(totalScore),
     weakestDim,
     archetype: getArchetype(weakestDim).name,
+    hasWeakness: hasClearWeakness(dimScores),
   };
 }
 

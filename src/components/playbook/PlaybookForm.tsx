@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isValidEmail } from "@/lib/validate";
 
 /**
  * Lead-magnet form for "The Secret Playbook" free download. Collect an email
@@ -38,7 +39,7 @@ export default function PlaybookForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    if (!isValidEmail(trimmed)) {
       setError("Enter a valid email to get the playbook.");
       return;
     }
@@ -105,7 +106,9 @@ export default function PlaybookForm({
         yours.
       </p>
 
-      <form onSubmit={submit} className="mt-8 grid gap-4">
+      {/* noValidate: the app's inline errors are the single validation UI - no
+          native browser bubbles (consistent with the rest of the suite). */}
+      <form onSubmit={submit} noValidate className="mt-8 grid gap-4">
         <label className="grid gap-1.5">
           <span className="label-mono">First name (optional)</span>
           <input
@@ -113,7 +116,7 @@ export default function PlaybookForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Priya"
-            className="input"
+            className="input w-full"
             autoComplete="given-name"
           />
         </label>
@@ -128,7 +131,7 @@ export default function PlaybookForm({
               setError(null);
             }}
             placeholder="you@email.com"
-            className="input"
+            className="input w-full"
             autoComplete="email"
             required
           />

@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decodeSubmission } from "@/lib/submission";
 import { normalizePhone } from "@/lib/phone";
+import { isValidEmail } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function validEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 /**
  * Audience self-service: return a person's own saved profile (score, archetype,
@@ -25,7 +22,7 @@ export async function POST(req: Request) {
   }
 
   const email = (body.email ?? "").trim().toLowerCase();
-  if (!email || !validEmail(email)) {
+  if (!email || !isValidEmail(email)) {
     return NextResponse.json(
       { ok: false, error: "Enter the email you used." },
       { status: 400 },

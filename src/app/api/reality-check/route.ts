@@ -7,6 +7,7 @@ import { TOTAL_QUESTIONS } from "@/lib/questions";
 import { normalizePhone } from "@/lib/phone";
 import { evaluateLock, consumeRetakes } from "@/lib/gating";
 import { buildFollowup, buildMirror, intentScore } from "@/lib/insights";
+import { isValidEmail, isValidPhone } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,10 +26,6 @@ type Body = {
   consistency?: unknown;
   yearsPlanning?: unknown;
 };
-
-function validEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 function validAnswers(value: unknown): value is Answers {
   return (
@@ -53,7 +50,7 @@ export async function POST(req: Request) {
   }
 
   const email = (body.email ?? "").trim().toLowerCase();
-  if (!email || !validEmail(email)) {
+  if (!email || !isValidEmail(email)) {
     return NextResponse.json(
       { ok: false, error: "A valid email is required." },
       { status: 400 },
@@ -72,9 +69,9 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if ((body.phone ?? "").replace(/\D/g, "").length < 10) {
+  if (!isValidPhone(body.phone)) {
     return NextResponse.json(
-      { ok: false, error: "A valid WhatsApp number is required." },
+      { ok: false, error: "A valid 10-digit WhatsApp number is required." },
       { status: 400 },
     );
   }
@@ -129,13 +126,17 @@ export async function POST(req: Request) {
   const priorHistory = existing ? decodeSubmission(existing).scoreHistory ?? [] : [];
   const snapshot = { score: result.totalScore, session, at: new Date().toISOString() };
 
+  // Only brand a weakest dimension / archetype when there's a real gap. For a
+  // strong-across or evenly-matched result there is no single weakest, so the
+  // stored row - and therefore the WhatsApp follow-up and the mirror built from
+  // it - leave both null instead of mislabeling a strong attendee.
   const module1 = {
     answers: encode(answers),
     dimScores: encode(result.dimScores),
     totalScore: result.totalScore,
     tier: result.tier,
-    weakestDim: result.weakestDim,
-    archetype: result.archetype,
+    weakestDim: result.hasWeakness ? result.weakestDim : null,
+    archetype: result.hasWeakness ? result.archetype : null,
     scoreHistory: encode([...priorHistory, snapshot].slice(-20)),
   };
 

@@ -4,13 +4,10 @@ import { normalizePhone } from "@/lib/phone";
 import { evaluateLock } from "@/lib/gating";
 import { getAppConfig } from "@/lib/config";
 import { decodeSubmission } from "@/lib/submission";
+import { isValidEmail } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function validEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 /**
  * Lightweight pre-check so the client can gate the Reality Check BEFORE revealing
@@ -26,7 +23,7 @@ export async function POST(req: Request) {
   }
 
   const email = (body.email ?? "").trim().toLowerCase();
-  if (!email || !validEmail(email)) {
+  if (!email || !isValidEmail(email)) {
     return NextResponse.json(
       { ok: false, error: "A valid email is required." },
       { status: 400 },

@@ -91,12 +91,24 @@ export default function PentagonRadar({
 
   const dataRadii = DIMENSIONS.map((dim) => R * (dimScores[dim] ?? 0) * eased);
 
+  // Expose the actual per-dimension values to screen readers - the whole point
+  // of the chart is otherwise visual-only. The label carries the numbers, and a
+  // visually-hidden list gives them structure.
+  const readings = DIMENSIONS.map((dim) => ({
+    short: DIM_META[dim].short,
+    pct: Math.round((dimScores[dim] ?? 0) * 100),
+  }));
+  const radarLabel = `Germany Readiness across five dimensions - ${readings
+    .map((r) => `${r.short} ${r.pct}%`)
+    .join(", ")}.`;
+
   return (
+    <>
     <svg
       viewBox={`${VIEW.minX} ${VIEW.minY} ${VIEW.w} ${VIEW.h}`}
       className={className}
       role="img"
-      aria-label="Germany Readiness radar across five dimensions"
+      aria-label={radarLabel}
     >
       <defs>
         <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
@@ -170,9 +182,10 @@ export default function PentagonRadar({
               x={x}
               y={y}
               textAnchor={anchor}
-              fill="var(--muted)"
-              fontSize={11}
-              style={{ letterSpacing: "0.08em" }}
+              fill="var(--text)"
+              fontSize={13}
+              fontWeight={700}
+              style={{ letterSpacing: "0.05em" }}
             >
               {lines.map((ln, j) => (
                 <tspan key={j} x={x} dy={j === 0 ? baseDy : 12}>
@@ -184,5 +197,13 @@ export default function PentagonRadar({
         })}
       </g>
     </svg>
+    <ul className="sr-only">
+      {readings.map((r) => (
+        <li key={r.short}>
+          {r.short}: {r.pct} percent
+        </li>
+      ))}
+    </ul>
+    </>
   );
 }

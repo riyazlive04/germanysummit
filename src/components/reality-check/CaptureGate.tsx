@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PHONE_DIGITS, digitsOnly, isValidEmail, isValidPhone } from "@/lib/validate";
 
 export type Identity = { name?: string; email: string; phone?: string };
 
@@ -18,28 +19,28 @@ export default function CaptureGate({
 }) {
   const [name, setName] = useState(defaults?.name ?? "");
   const [email, setEmail] = useState(defaults?.email ?? "");
-  const [phone, setPhone] = useState(defaults?.phone ?? "");
+  // Phone is held as bare digits, capped at 10 - the only shape we accept.
+  const [phone, setPhone] = useState(digitsOnly(defaults?.phone).slice(0, PHONE_DIGITS));
   const [error, setError] = useState<string | null>(null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
-    const digits = phone.replace(/\D/g, "");
 
     if (!trimmedName) {
       setError("Enter your first name.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    if (!isValidEmail(trimmedEmail)) {
       setError("Enter a valid email so we can send your result.");
       return;
     }
-    if (digits.length < 10) {
-      setError("Enter a valid WhatsApp number with country code.");
+    if (!isValidPhone(phone)) {
+      setError(`Enter your ${PHONE_DIGITS}-digit WhatsApp number.`);
       return;
     }
-    onSubmit({ name: trimmedName, email: trimmedEmail, phone: phone.trim() });
+    onSubmit({ name: trimmedName, email: trimmedEmail, phone });
   }
 
   return (
@@ -54,7 +55,10 @@ export default function CaptureGate({
         just your result.
       </p>
 
-      <form onSubmit={submit} className="mt-7 grid gap-4">
+      {/* noValidate: suppress the browser's native validation bubbles so the
+          app's own branded inline errors below are the single, consistent
+          validation UI (the fields keep `required` for assistive tech). */}
+      <form onSubmit={submit} noValidate className="mt-7 grid gap-4">
         <Field label="First name">
           <input
             type="text"
@@ -64,7 +68,7 @@ export default function CaptureGate({
               setError(null);
             }}
             placeholder="Priya"
-            className="input"
+            className="input w-full"
             autoComplete="given-name"
             required
           />
@@ -79,7 +83,7 @@ export default function CaptureGate({
               setError(null);
             }}
             placeholder="you@email.com"
-            className="input"
+            className="input w-full"
             autoComplete="email"
             required
           />
@@ -88,14 +92,17 @@ export default function CaptureGate({
         <Field label="WhatsApp number">
           <input
             type="tel"
+            inputMode="numeric"
             value={phone}
             onChange={(e) => {
-              setPhone(e.target.value);
+              // Keep only digits, capped at 10 - the field can't hold anything else.
+              setPhone(digitsOnly(e.target.value).slice(0, PHONE_DIGITS));
               setError(null);
             }}
-            placeholder="+91 …"
-            className="input"
-            autoComplete="tel"
+            placeholder="10-digit mobile number"
+            className="input w-full"
+            autoComplete="tel-national"
+            maxLength={PHONE_DIGITS}
             required
           />
         </Field>

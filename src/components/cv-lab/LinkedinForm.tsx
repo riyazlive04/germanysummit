@@ -1,9 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type { LinkedinReview } from "@/lib/linkedin";
-import LinkedinResult from "./LinkedinResult";
 import Modal from "@/components/Modal";
+import LoadingBlock from "@/components/LoadingBlock";
+
+// The result panel is only shown after a submission, so lazy-load it.
+const LinkedinResult = dynamic(() => import("./LinkedinResult"), {
+  loading: () => <LoadingBlock />,
+});
 
 /**
  * LinkedIn Optimizer UI. Paste your headline + About, or upload your own LinkedIn

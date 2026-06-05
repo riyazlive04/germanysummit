@@ -1,12 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import ResultView from "@/components/reality-check/ResultView";
-import CvResult from "@/components/cv-lab/CvResult";
-import LinkedinResult from "@/components/cv-lab/LinkedinResult";
-import RoadmapTimeline from "@/components/roadmap/RoadmapTimeline";
+import LoadingBlock from "@/components/LoadingBlock";
+import { PHONE_DIGITS, digitsOnly, isValidEmail } from "@/lib/validate";
 import type { ScoreResult, Tier } from "@/lib/scoring";
+
+// These result panels are only rendered after a successful lookup, so lazy-load
+// them and keep the initial /my-results bundle to just the lookup form.
+const ResultView = dynamic(() => import("@/components/reality-check/ResultView"), {
+  loading: () => <LoadingBlock />,
+});
+const CvResult = dynamic(() => import("@/components/cv-lab/CvResult"), {
+  loading: () => <LoadingBlock />,
+});
+const LinkedinResult = dynamic(() => import("@/components/cv-lab/LinkedinResult"), {
+  loading: () => <LoadingBlock />,
+});
+const RoadmapTimeline = dynamic(() => import("@/components/roadmap/RoadmapTimeline"), {
+  loading: () => <LoadingBlock />,
+});
 import type { CvReview } from "@/lib/cv";
 import type { LinkedinReview } from "@/lib/linkedin";
 import type { DecodedSubmission, Dimension } from "@/lib/submission";
@@ -30,7 +44,7 @@ export default function MyResultsView({
 
   async function lookup() {
     setError(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!isValidEmail(email.trim())) {
       setError("Enter the email you used.");
       return;
     }
@@ -39,7 +53,7 @@ export default function MyResultsView({
       const res = await fetch("/api/my-results", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), phone: phone.trim() || undefined }),
+        body: JSON.stringify({ email: email.trim(), phone: phone || undefined }),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
@@ -65,6 +79,9 @@ export default function MyResultsView({
             tier: (sub.tier ?? "") as Tier,
             weakestDim: (sub.weakestDim ?? "Profile") as Dimension,
             archetype: sub.archetype ?? "",
+            // Stored null weakestDim means there was no single weakest to flag -
+            // mirror that so the saved result reads the same as when first shown.
+            hasWeakness: sub.weakestDim != null,
           }
         : null;
 
@@ -93,6 +110,8 @@ export default function MyResultsView({
             onClick={() => {
               setSub(null);
               setPhone("");
+              setNeedsPhone(false);
+              setError(null);
             }}
             className="btn btn-ghost px-4 py-2 text-sm"
           >
@@ -148,8 +167,9 @@ export default function MyResultsView({
         See your saved result.
       </h1>
       <p className="mt-4 text-[15px] leading-relaxed text-muted">
-        Already taken the Reality Check, CV Lab, or Roadmap? Enter your email to
-        pull up everything you&apos;ve done.
+        Already taken the Reality Check, CV Lab, or Roadmap? Enter your email and
+        the mobile number you registered with to pull up everything you&apos;ve
+        done.
       </p>
 
       <div className="mt-7 grid gap-4">
@@ -158,26 +178,35 @@ export default function MyResultsView({
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError(null);
+            }}
             placeholder="you@email.com"
             className="input w-full"
             autoComplete="email"
           />
         </label>
 
-        {needsPhone && (
-          <label className="grid gap-1.5">
-            <span className="eyebrow !text-muted">Phone on your registration</span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 …"
-              className="input w-full"
-              autoComplete="tel"
-            />
-          </label>
-        )}
+        <label className="grid gap-1.5">
+          <span className="eyebrow !text-muted">Mobile number</span>
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={phone}
+            onChange={(e) => {
+              setPhone(digitsOnly(e.target.value).slice(0, PHONE_DIGITS));
+              setError(null);
+            }}
+            placeholder="10-digit mobile number"
+            className="input w-full"
+            autoComplete="tel-national"
+            maxLength={PHONE_DIGITS}
+          />
+          <span className="text-xs text-muted">
+            The number you used to register{needsPhone ? " - required for this result" : ""}.
+          </span>
+        </label>
 
         {error && <p className="text-sm text-red">{error}</p>}
 

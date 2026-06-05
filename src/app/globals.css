@@ -77,6 +77,20 @@
 }
 
 @layer base {
+  /* Smooth in-page scrolling (anchor jumps, scroll-to-top between quiz steps).
+     scroll-padding keeps anchored targets clear of the sticky header. */
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 84px;
+  }
+
+  /* Never animate scrolling for users who ask for reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
   body {
     background-color: var(--bg);
     color: var(--text);
@@ -231,6 +245,12 @@
     border-color: var(--gold);
     box-shadow: 0 0 0 3px var(--gold-glow);
   }
+}
+
+/* On the info-collection (capture) step the quiz sets data-hide-cta on <html>,
+   so the redundant "Start free" navbar CTA is hidden and the gate stays focused. */
+html[data-hide-cta="true"] .header-cta {
+  display: none;
 }
 
 /* Restrained, purposeful motion - one orchestrated reveal. */

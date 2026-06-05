@@ -3,7 +3,7 @@
 import PentagonRadar from "@/components/PentagonRadar";
 import DimBar from "./DimBar";
 import { useCountUp } from "@/lib/useCountUp";
-import { TIER_META, type ScoreResult } from "@/lib/scoring";
+import { STRONG_DIM_THRESHOLD, TIER_META, type ScoreResult } from "@/lib/scoring";
 import { DIM_META } from "@/lib/dimensions";
 import { getArchetype } from "@/lib/archetypes";
 import ShareBar from "@/components/ShareBar";
@@ -28,6 +28,15 @@ const tierColorVar: Record<"red" | "gold" | "green", string> = {
   green: "var(--green)",
 };
 
+// Text colour that sits ON the tier badge / accent. Gold is light, so it needs
+// the dark gold-ink; red and green are dark enough to carry white text. Using
+// gold-ink on every tier (the old behaviour) failed contrast on red/green.
+const tierInk: Record<"red" | "gold" | "green", string> = {
+  red: "#ffffff",
+  gold: "var(--gold-ink)",
+  green: "#ffffff",
+};
+
 function BlockTitle({ n, title }: { n: string; title: string }) {
   return (
     <div className="mb-5 flex items-center gap-3">
@@ -47,22 +56,20 @@ export default function ResultView({
   result: ScoreResult;
   onRestart?: () => void;
 }) {
-  const { dimScores, totalScore, tier, weakestDim } = result;
+  const { dimScores, totalScore, tier, weakestDim, hasWeakness } = result;
   const animatedScore = useCountUp(totalScore);
   const tierMeta = TIER_META[tier];
   const accent = tierColorVar[tierMeta.color];
+  const accentInk = tierInk[tierMeta.color];
   const archetype = getArchetype(weakestDim);
 
-  // When every dimension is equally high (no spread), or even the weakest one is
-  // already strong, there is no single "weakest" to flag. Don't brand a strong or
-  // perfect result with a limiting-belief archetype and a red "weakest" marker
-  // (this is what made a 100/100 show "The Invisible Profile · Profile weakest").
-  const dimValues = Object.values(dimScores);
-  const lo = Math.min(...dimValues);
-  const hi = Math.max(...dimValues);
-  const strongAcross = lo >= 0.84;
-  const noClearGap = hi - lo < 1e-9 || strongAcross;
-  const showWeakest = !noClearGap;
+  // Single source of truth (scoring.hasClearWeakness): when every dimension is
+  // equally matched, or even the weakest is already strong, there is no single
+  // "weakest" to flag - so we don't brand a strong/perfect result with a
+  // limiting-belief archetype and a red "weakest" marker. The persisted row and
+  // the WhatsApp follow-up use the same flag, so all three stay consistent.
+  const showWeakest = hasWeakness;
+  const strongAcross = Math.min(...Object.values(dimScores)) >= STRONG_DIM_THRESHOLD;
 
   return (
     <div className="grid gap-5">
@@ -82,7 +89,7 @@ export default function ResultView({
 
           <div
             className="mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5"
-            style={{ backgroundColor: accent, color: "var(--gold-ink)" }}
+            style={{ backgroundColor: accent, color: accentInk }}
           >
             <span className="text-sm font-bold">{tier}</span>
           </div>

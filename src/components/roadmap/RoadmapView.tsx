@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Roadmap } from "@/lib/submission";
-import RoadmapTimeline from "./RoadmapTimeline";
+import LoadingBlock from "@/components/LoadingBlock";
+
+// The week-by-week timeline is only shown after a plan is generated, so defer
+// its bundle until then.
+const RoadmapTimeline = dynamic(() => import("./RoadmapTimeline"), {
+  loading: () => <LoadingBlock />,
+});
 
 /**
  * Module 3 UI - generates the 90-Day Roadmap from the saved readiness profile

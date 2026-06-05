@@ -19,7 +19,17 @@ export default function DimBar({
 }) {
   const [w, setW] = useState(0);
   useEffect(() => {
-    const id = requestAnimationFrame(() => setW(Math.round(score * 100)));
+    const target = Math.round(score * 100);
+    // Snap to the final width for users who prefer reduced motion, matching the
+    // radar and the count-up; otherwise animate from 0 on the next frame.
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setW(target);
+      return;
+    }
+    const id = requestAnimationFrame(() => setW(target));
     return () => cancelAnimationFrame(id);
   }, [score]);
 

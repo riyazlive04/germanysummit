@@ -143,6 +143,7 @@ export default function LivePoll({
             setAuthed(null);
             void fetchData(filter);
           }}
+          noValidate
           className="mt-6 grid gap-3"
         >
           <input

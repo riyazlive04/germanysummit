@@ -1,8 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type { CvReview } from "@/lib/cv";
-import CvResult from "./CvResult";
+import LoadingBlock from "@/components/LoadingBlock";
+
+// The diagnosis result is only shown after a submission, so lazy-load it.
+const CvResult = dynamic(() => import("./CvResult"), {
+  loading: () => <LoadingBlock />,
+});
 
 /**
  * Module 2 UI - paste or upload (.txt/.pdf) a résumé, optionally a LinkedIn

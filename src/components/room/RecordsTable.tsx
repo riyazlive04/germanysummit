@@ -211,6 +211,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             setAuthed(null);
             void load();
           }}
+          noValidate
           className="mt-6 grid gap-3"
         >
           <input

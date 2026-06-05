@@ -125,6 +125,7 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
             setAuthed(null);
             void fetchData(filter);
           }}
+          noValidate
           className="mt-6 grid gap-3"
         >
           <input

@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/questions";
 import { score, type ScoreResult } from "@/lib/scoring";
 import { DIM_META } from "@/lib/dimensions";
-import ResultView from "./ResultView";
+import { PHONE_DIGITS, digitsOnly } from "@/lib/validate";
+import LoadingBlock from "@/components/LoadingBlock";
 import CaptureGate, { type Identity } from "./CaptureGate";
+
+// Lazy-load the result view (pentagon radar + share bar): it's only needed once
+// the quiz is finished, so it stays out of the initial /reality-check bundle.
+const ResultView = dynamic(() => import("./ResultView"), {
+  ssr: false,
+  loading: () => <LoadingBlock label="Building your result…" />,
+});
 
 /**
  * The Reality Check flow: intro → 10 questions → (capture, if needed) → result.
@@ -56,6 +65,26 @@ export default function QuizFlow({
   });
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [checking, setChecking] = useState(false);
+  // For FlexiFunnels users we run a lock check on mount; keep the intro CTA
+  // disabled until it resolves so a fast tap can't race the mount check.
+  const [booting, setBooting] = useState(!!ff?.email);
+  // The pending auto-advance timer, so we can clear it on unmount / reset.
+  const advanceTimer = useRef<number | null>(null);
+  // Refs to the current question's option buttons, for arrow-key roving focus.
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Arrow keys move focus between options like a real radio group; Space/Enter
+  // (native button behaviour) selects. Home/End jump to first/last.
+  function onOptionKeyDown(e: React.KeyboardEvent, i: number, count: number) {
+    let to = i;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") to = (i + 1) % count;
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") to = (i - 1 + count) % count;
+    else if (e.key === "Home") to = 0;
+    else if (e.key === "End") to = count - 1;
+    else return;
+    e.preventDefault();
+    optionRefs.current[to]?.focus();
+  }
 
   const firstName = identity.name?.trim().split(/\s+/)[0];
 
@@ -63,13 +92,40 @@ export default function QuizFlow({
   // someone who already took it lands on the locked screen instead of the quiz.
   useEffect(() => {
     if (!ff?.email) return;
-    void fetchStatus(ff.email, ff.phone).then((s) => {
-      if (s.locked) setPhase("locked");
-      else if (s.previousAnswers) setPreviousAnswers(s.previousAnswers);
-    });
+    void fetchStatus(ff.email, ff.phone)
+      .then((s) => {
+        if (s.locked) setPhase("locked");
+        else if (s.previousAnswers) setPreviousAnswers(s.previousAnswers);
+      })
+      .finally(() => setBooting(false));
     // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Every step starts at the top - the quiz, the context screen, and especially
+  // the long result page are anchored to the top on each transition instead of
+  // leaving the user scrolled mid-page from the previous step.
+  useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+  }, [phase, index]);
+
+  // Clear any pending auto-advance timer if the component unmounts mid-wait.
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
+    };
+  }, []);
+
+  // On the info-collection (capture) step, hide the navbar's "Start free" CTA -
+  // it points back here and only distracts. The Header lives outside this tree,
+  // so we coordinate through a data attribute on <html> (see globals.css).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (phase === "capture") root.setAttribute("data-hide-cta", "true");
+    else root.removeAttribute("data-hide-cta");
+    return () => root.removeAttribute("data-hide-cta");
+  }, [phase]);
 
   type Status = { locked: boolean; previousAnswers: number[] | null };
 
@@ -118,6 +174,10 @@ export default function QuizFlow({
   }
 
   function reset() {
+    if (advanceTimer.current !== null) {
+      window.clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
     setAnswers(Array(TOTAL_QUESTIONS).fill(null));
     setIndex(0);
     setResult(null);
@@ -134,9 +194,9 @@ export default function QuizFlow({
   // locked person is recognized up front and never re-answers the questions.
   async function beginQuiz() {
     // All three identity fields are required. Only skip the capture gate when a
-    // FlexiFunnels pass-through already gave us name, email, AND phone.
-    const phoneDigits = (identity.phone ?? "").replace(/\D/g, "");
-    if (identity.name?.trim() && identity.email && phoneDigits.length >= 10) {
+    // FlexiFunnels pass-through already gave us name, email, AND a usable phone.
+    const phoneDigits = digitsOnly(identity.phone);
+    if (identity.name?.trim() && identity.email && phoneDigits.length >= PHONE_DIGITS) {
       setChecking(true);
       const s = await fetchStatus(identity.email, identity.phone);
       setChecking(false);
@@ -167,7 +227,8 @@ export default function QuizFlow({
     setAnswers(next);
     setLocked(true);
 
-    window.setTimeout(() => {
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null;
       if (index < TOTAL_QUESTIONS - 1) {
         setIndex(index + 1);
         setLocked(false);
@@ -232,10 +293,11 @@ export default function QuizFlow({
         </ul>
         <button
           onClick={beginQuiz}
-          disabled={checking}
-          className="btn-gold mt-10 px-8 py-4 text-[15px] disabled:opacity-60"
+          disabled={checking || booting}
+          aria-busy={checking || booting}
+          className="btn-gold mt-10 w-full px-8 py-4 text-[15px] disabled:opacity-60 sm:w-auto"
         >
-          {checking ? "Checking…" : "Start the Reality Check →"}
+          {checking || booting ? "Checking…" : "Start the Reality Check →"}
         </button>
       </div>
     );
@@ -313,10 +375,16 @@ export default function QuizFlow({
             Over the last 6 months, how consistent have you been with your Germany
             plan?
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div
+            className="mt-4 flex flex-wrap gap-2"
+            role="radiogroup"
+            aria-label="Consistency over the last 6 months, 0 to 10"
+          >
             {Array.from({ length: 11 }, (_, n) => (
               <button
                 key={n}
+                role="radio"
+                aria-checked={consistency === n}
                 onClick={() => setConsistency(n)}
                 className={`nums h-11 w-11 rounded-xl border-2 font-display text-lg transition-all ${
                   consistency === n
@@ -339,10 +407,16 @@ export default function QuizFlow({
           <p className="font-display text-xl leading-snug">
             How long have you been planning a German career?
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div
+            className="mt-4 grid gap-3 sm:grid-cols-2"
+            role="radiogroup"
+            aria-label="How long have you been planning a German career?"
+          >
             {YEARS_OPTIONS.map((o) => (
               <button
                 key={o.value}
+                role="radio"
+                aria-checked={yearsPlanning === o.value}
                 onClick={() => setYearsPlanning(o.value)}
                 className={`rounded-[14px] border-2 p-4 text-left text-[15px] transition-all ${
                   yearsPlanning === o.value
@@ -356,13 +430,24 @@ export default function QuizFlow({
           </div>
         </div>
 
-        <button
-          onClick={submitContext}
-          disabled={consistency === null || !yearsPlanning}
-          className="btn-gold mt-10 px-8 py-4 text-[15px] disabled:opacity-50"
-        >
-          See my Readiness Score →
-        </button>
+        <div className="mt-10 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center">
+          <button
+            onClick={() => {
+              setIndex(TOTAL_QUESTIONS - 1);
+              setPhase("quiz");
+            }}
+            className="rounded-lg border border-[var(--line)] px-6 py-4 text-sm font-medium text-muted transition-colors hover:text-text sm:py-3"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={submitContext}
+            disabled={consistency === null || !yearsPlanning}
+            className="btn-gold w-full px-8 py-4 text-[15px] disabled:opacity-50 sm:w-auto"
+          >
+            See my Readiness Score →
+          </button>
+        </div>
       </div>
     );
   }
@@ -382,7 +467,14 @@ export default function QuizFlow({
             {String(index + 1).padStart(2, "0")} / {TOTAL_QUESTIONS}
           </span>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
+        <div
+          className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_QUESTIONS}
+          aria-valuenow={index + 1}
+          aria-label={`Question ${index + 1} of ${TOTAL_QUESTIONS}`}
+        >
           <div
             className="h-full rounded-full bg-gold transition-[width] duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -390,19 +482,34 @@ export default function QuizFlow({
         </div>
       </div>
 
+      {/* Announce step changes to screen readers (the visual progress is silent). */}
+      <p className="sr-only" aria-live="polite">
+        Question {index + 1} of {TOTAL_QUESTIONS}: {DIM_META[q.dimension].short}
+      </p>
+
       {/* Question - re-keyed so it re-runs the rise animation each step */}
       <div key={index} className="animate-rise">
-        <h2 className="font-display text-[1.7rem] leading-tight sm:text-4xl">
+        <h2 id="quiz-question" className="font-display text-[1.7rem] leading-tight sm:text-4xl">
           {q.prompt}
         </h2>
 
-        <div className="mt-8 grid gap-3">
+        <div className="mt-8 grid gap-3" role="radiogroup" aria-labelledby="quiz-question">
           {q.options.map((opt, i) => {
             const isSelected = selected === opt.points;
             const letter = String.fromCharCode(65 + i); // A, B, C, D
+            // Roving tabindex: the selected option (or the first, when none is
+            // chosen yet) is the single tab stop; arrows move between the rest.
+            const isTabStop = selected === null ? i === 0 : isSelected;
             return (
               <button
                 key={opt.label}
+                ref={(el) => {
+                  optionRefs.current[i] = el;
+                }}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={isTabStop ? 0 : -1}
+                onKeyDown={(e) => onOptionKeyDown(e, i, q.options.length)}
                 onClick={() => select(opt.points)}
                 disabled={locked}
                 className={`group flex items-center gap-3.5 rounded-[14px] border-2 p-5 text-left transition-all disabled:cursor-default ${
@@ -490,7 +597,11 @@ function DeliveryNote({
   const m = map[status];
 
   return (
-    <div className="mx-auto mt-6 flex max-w-md items-center justify-center gap-2 text-xs text-muted">
+    <div
+      role="status"
+      aria-live="polite"
+      className="mx-auto mt-6 flex max-w-md items-center justify-center gap-2 text-xs text-muted"
+    >
       <span
         className="h-1.5 w-1.5 rounded-full"
         style={{ backgroundColor: m.dot }}
