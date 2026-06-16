@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { formatISTDateTime } from "@/lib/datetime";
+import Modal from "@/components/Modal";
+import { QUESTIONS } from "@/lib/questions";
 
 /**
  * Admin records table (behind ADMIN_KEY). Browse submissions, control retake and
@@ -35,6 +37,7 @@ type Rec = {
   weakestDim: string | null;
   consistency: number | null;
   yearsPlanning: string | null;
+  answers: number[] | null;
   intentScore: number;
   intentLabel: Intent;
   mirror: string;
@@ -74,6 +77,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
   const [sortIntent, setSortIntent] = useState(false);
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Rec | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const keyRef = useRef(key);
@@ -199,6 +203,78 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
     URL.revokeObjectURL(url);
   }
 
+  // Full workbook of ALL submissions (every field + the per-question answer
+  // mapping), as an Excel-native .xls. Uses an HTML table workbook so no library
+  // is needed and it opens straight into Excel.
+  function exportExcel(rows: Rec[]) {
+    const head = [
+      "Name",
+      "Email",
+      "Phone",
+      "Session",
+      "Intent",
+      "Intent score",
+      "Readiness score",
+      "Tier",
+      "Archetype",
+      "Weakest dim",
+      "Consistency (0-10)",
+      "Years planning",
+      "Enrolled",
+      "Modules",
+      "Created (IST)",
+      ...QUESTIONS.map((q) => `${q.id}: ${q.prompt}`),
+    ];
+    const body = rows
+      .map((r) => {
+        const cells = [
+          r.name,
+          r.email,
+          r.phone,
+          r.session.replace("_", " "),
+          r.intentLabel,
+          r.intentScore,
+          r.totalScore,
+          r.tier,
+          r.archetype,
+          r.weakestDim,
+          r.consistency,
+          r.yearsPlanning ? YEARS_SHORT[r.yearsPlanning] : "",
+          r.enrolledProgram ?? "",
+          [
+            r.hasReality && "RC",
+            r.hasCv && "CV",
+            r.hasLinkedin && "LI",
+            r.hasRoadmap && "RM",
+            r.hasPlaybook && "PB",
+          ]
+            .filter(Boolean)
+            .join(" "),
+          formatISTDateTime(r.createdAt),
+          ...QUESTIONS.map((q, i) => {
+            const pts = r.answers?.[i];
+            if (pts == null) return "";
+            const opt = q.options.find((o) => o.points === pts);
+            return opt ? `${opt.label} (${pts})` : String(pts);
+          }),
+        ];
+        return `<tr>${cells.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`;
+      })
+      .join("");
+    const html =
+      `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">` +
+      `<head><meta charset="utf-8"></head><body><table border="1"><thead><tr>` +
+      head.map((h) => `<th>${escapeHtml(h)}</th>`).join("") +
+      `</tr></thead><tbody>${body}</tbody></table></body></html>`;
+    const blob = new Blob(["﻿", html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `submissions-${rows.length}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ── Key gate ───────────────────────────────────────────────────────────────
   if (authed !== true) {
     return (
@@ -260,6 +336,14 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             className="btn btn-ghost px-4 py-2 text-sm disabled:opacity-40"
           >
             Export CSV
+          </button>
+          <button
+            onClick={() => exportExcel(records)}
+            disabled={busy || records.length === 0}
+            className="btn btn-ghost px-4 py-2 text-sm disabled:opacity-40"
+            title="All submissions, every field + question-by-question answers, as Excel"
+          >
+            Export Excel (all)
           </button>
           <button
             onClick={() =>
@@ -385,12 +469,21 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             {view.map((r) => (
               <tr key={r.id} className="border-b border-[var(--line)] last:border-0">
                 <Td>
-                  <div className="font-medium">{r.name || "-"}</div>
-                  <div className="text-xs text-muted">{r.email}</div>
-                  {r.phone && <div className="text-xs text-muted">{r.phone}</div>}
-                  {r.mirror && (
-                    <div className="mt-1 text-[0.7rem] italic text-gold-deep">{r.mirror}</div>
-                  )}
+                  <button
+                    onClick={() => setDetail(r)}
+                    disabled={!r.hasReality}
+                    className="text-left transition-opacity hover:opacity-70 disabled:cursor-default disabled:hover:opacity-100"
+                    title={r.hasReality ? "View question-by-question answers" : "No Reality Check answers yet"}
+                  >
+                    <div className="font-medium underline decoration-dotted decoration-[var(--line)] underline-offset-4">
+                      {r.name || "-"}
+                    </div>
+                    <div className="text-xs text-muted">{r.email}</div>
+                    {r.phone && <div className="text-xs text-muted">{r.phone}</div>}
+                    {r.mirror && (
+                      <div className="mt-1 text-[0.7rem] italic text-gold-deep">{r.mirror}</div>
+                    )}
+                  </button>
                 </Td>
                 <Td>
                   <span className={`chip ${INTENT_STYLE[r.intentLabel]}`}>
@@ -543,7 +636,85 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           </tbody>
         </table>
       </div>
+
+      <AnswersModal record={detail} onClose={() => setDetail(null)} />
     </div>
+  );
+}
+
+/** Question-by-question view of one person's Reality Check answers. */
+function AnswersModal({ record, onClose }: { record: Rec | null; onClose: () => void }) {
+  const answers = record?.answers;
+  return (
+    <Modal
+      open={!!record}
+      onClose={onClose}
+      title={record?.name?.trim() || record?.email || "Answers"}
+    >
+      {record && (
+        <div className="grid gap-1">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted">
+              Reality Check answers
+              {typeof record.totalScore === "number" && (
+                <>
+                  {" · "}
+                  <span className="nums">{record.totalScore}</span>/100
+                </>
+              )}
+            </p>
+            {record.answers && record.answers.length > 0 && (
+              <button
+                onClick={() => downloadRecordPdf(record)}
+                className="chip hover:!border-gold"
+                title="Download this record as a PDF"
+              >
+                Download PDF
+              </button>
+            )}
+          </div>
+          {!answers || answers.length === 0 ? (
+            <p className="text-sm text-muted">No answers recorded for this person.</p>
+          ) : (
+            <ol className="grid gap-5">
+              {QUESTIONS.map((q, i) => {
+                const picked = answers[i];
+                return (
+                  <li key={q.id} className="grid gap-2">
+                    <div className="flex gap-2">
+                      <span className="font-mono text-xs text-muted">{q.id}</span>
+                      <span className="text-sm font-medium">{q.prompt}</span>
+                    </div>
+                    <div className="grid gap-1.5">
+                      {q.options.map((opt) => {
+                        const isPicked = picked === opt.points;
+                        return (
+                          <div
+                            key={opt.label}
+                            className={`rounded-lg border px-3 py-2 text-sm ${
+                              isPicked
+                                ? "border-gold bg-[var(--anchor)] text-text"
+                                : "border-[var(--line)] text-muted"
+                            }`}
+                          >
+                            <span className="mr-2 font-mono text-[0.65rem]">{opt.points}</span>
+                            {opt.label}
+                            {isPicked && <span className="ml-2 text-gold">✓</span>}
+                          </div>
+                        );
+                      })}
+                      {picked == null && (
+                        <p className="text-xs italic text-muted">Not answered.</p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -670,6 +841,82 @@ function EnrollCell({
       </button>
     </div>
   );
+}
+
+function escapeHtml(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Open a clean, printable view of one person's full Reality Check (header facts +
+ * every question with their selected option marked) and trigger the browser's
+ * print dialog, where it can be saved as a PDF. No PDF library needed.
+ */
+function downloadRecordPdf(r: Rec) {
+  const win = window.open("", "_blank", "width=820,height=1000");
+  if (!win) {
+    alert("Allow pop-ups for this site to download the PDF.");
+    return;
+  }
+  const facts: [string, unknown][] = [
+    ["Email", r.email],
+    ["Phone", r.phone || "-"],
+    ["Session", r.session.replace("_", " ")],
+    ["Readiness score", r.totalScore != null ? `${r.totalScore} / 100` : "-"],
+    ["Tier", r.tier || "-"],
+    ["Archetype", r.archetype || "-"],
+    ["Weakest dimension", r.weakestDim || "-"],
+    ["Consistency", r.consistency != null ? `${r.consistency} / 10` : "-"],
+    ["Years planning", r.yearsPlanning ? YEARS_SHORT[r.yearsPlanning] : "-"],
+    ["Intent", `${r.intentLabel} (${r.intentScore})`],
+    ["Submitted (IST)", formatISTDateTime(r.createdAt)],
+  ];
+  const factsHtml = facts
+    .map(([k, v]) => `<div class="fact"><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`)
+    .join("");
+  const questionsHtml = QUESTIONS.map((q, i) => {
+    const picked = r.answers?.[i];
+    const opts = q.options
+      .map((o) => {
+        const sel = picked === o.points;
+        return `<li class="${sel ? "sel" : ""}">${escapeHtml(o.label)} <span class="pts">(${o.points})</span>${sel ? " ✓" : ""}</li>`;
+      })
+      .join("");
+    const unanswered = picked == null ? `<p class="na">Not answered.</p>` : "";
+    return `<div class="q"><p class="prompt"><b>${q.id}.</b> ${escapeHtml(q.prompt)}</p><ul>${opts}</ul>${unanswered}</div>`;
+  }).join("");
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(
+    r.name || r.email,
+  )} — Reality Check</title><style>
+    *{box-sizing:border-box}
+    body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;margin:40px;line-height:1.45}
+    h1{font-size:22px;margin:0 0 2px}
+    .sub{color:#666;font-size:13px;margin:0 0 18px}
+    .facts{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin-bottom:24px}
+    .fact{display:flex;justify-content:space-between;gap:12px;font-size:13px;border-bottom:1px dotted #eee;padding:2px 0}
+    .fact span{color:#777}
+    .q{margin-bottom:16px;page-break-inside:avoid}
+    .prompt{font-size:14px;margin:0 0 6px}
+    ul{list-style:none;padding:0;margin:0}
+    li{font-size:13px;padding:6px 10px;border:1px solid #e5e5e5;border-radius:6px;margin-bottom:4px;color:#777}
+    li.sel{border-color:#c79a3a;background:#fbf4e3;color:#1a1a1a;font-weight:600}
+    .pts{color:#999;font-weight:400;font-size:11px}
+    .na{font-size:12px;color:#999;font-style:italic;margin:2px 0 0}
+    @media print{body{margin:18mm}}
+  </style></head><body>
+    <h1>${escapeHtml(r.name || "—")}</h1>
+    <p class="sub">Germany Career Summit — Reality Check record</p>
+    <div class="facts">${factsHtml}</div>
+    <h2 style="font-size:15px;margin:0 0 12px">Question-by-question answers</h2>
+    ${questionsHtml}
+    <script>window.onload=function(){window.focus();window.print();}<\/script>
+  </body></html>`;
+  win.document.open();
+  win.document.write(doc);
+  win.document.close();
 }
 
 function Th({ children }: { children: React.ReactNode }) {

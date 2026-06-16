@@ -37,6 +37,7 @@ function slim(row: ReturnType<typeof decodeSubmission>) {
     weakestDim: row.weakestDim,
     consistency: row.consistency,
     yearsPlanning: row.yearsPlanning,
+    answers: row.answers,
     intentScore: intent.score,
     intentLabel: intent.label,
     mirror: buildMirror(row),
