@@ -16,14 +16,14 @@ const YEARS_LABEL: Record<string, string> = {
   gt3: "3+ years",
 };
 
-export type Intent = { score: number; label: "Hot" | "Warm" | "Cool" };
+export type Intent = { score: number; label: "Elite" | "Guided" | "Solo" };
 
 /**
  * Higher = more ready to enroll. Pain (low score, low consistency, long time
  * stuck) and engagement (reachable, ran more tools, retook) raise the score.
  */
 export function intentScore(s: DecodedSubmission): Intent {
-  if (typeof s.totalScore !== "number") return { score: 0, label: "Cool" };
+  if (typeof s.totalScore !== "number") return { score: 0, label: "Solo" };
   let score = 1; // completed the Reality Check
 
   if (s.totalScore <= 30) score += 3;
@@ -44,7 +44,7 @@ export function intentScore(s: DecodedSubmission): Intent {
   if (s.roadmap != null) score += 1;
   if (Array.isArray(s.scoreHistory) && s.scoreHistory.length >= 2) score += 1;
 
-  const label: Intent["label"] = score >= 7 ? "Hot" : score >= 4 ? "Warm" : "Cool";
+  const label: Intent["label"] = score >= 7 ? "Elite" : score >= 4 ? "Guided" : "Solo";
   return { score, label };
 }
 

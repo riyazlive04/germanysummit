@@ -5,6 +5,17 @@ import Link from "next/link";
 import { formatISTDateTime } from "@/lib/datetime";
 import Modal from "@/components/Modal";
 import { QUESTIONS } from "@/lib/questions";
+import {
+  computeDimScores,
+  getTier,
+  hasClearWeakness,
+  STRONG_DIM_THRESHOLD,
+  TIER_META,
+  type Tier,
+} from "@/lib/scoring";
+import { getArchetype } from "@/lib/archetypes";
+import { DIM_META } from "@/lib/dimensions";
+import { DIMENSIONS } from "@/lib/submission";
 
 /**
  * Admin records table (behind ADMIN_KEY). Browse submissions, control retake and
@@ -22,7 +33,7 @@ const YEARS_SHORT: Record<string, string> = {
   gt3: "3+y",
 };
 
-type Intent = "Hot" | "Warm" | "Cool";
+type Intent = "Elite" | "Guided" | "Solo";
 
 type Rec = {
   id: string;
@@ -58,9 +69,9 @@ type Seats = { guided: Program; solo: Program };
 type EnrolledProgram = "guided" | "solo" | null;
 
 const INTENT_STYLE: Record<Intent, string> = {
-  Hot: "!border-red text-red",
-  Warm: "!border-gold text-gold",
-  Cool: "text-muted",
+  Elite: "!border-red text-red",
+  Guided: "!border-gold text-gold",
+  Solo: "text-muted",
 };
 
 export default function RecordsTable({ initialKey }: { initialKey?: string }) {
@@ -80,6 +91,8 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
   const [detail, setDetail] = useState<Rec | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const keyRef = useRef(key);
   keyRef.current = key;
 
@@ -130,6 +143,12 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
     if (authed === false || !key) return;
     void load();
   }, [authed, key, load]);
+
+  // Any change to the filtered view should send us back to the first page,
+  // otherwise we can land on a now-empty page.
+  useEffect(() => {
+    setPage(1);
+  }, [query, hotOnly, sortIntent, pageSize]);
 
   // Optimistic: apply the local change immediately so the click feels instant,
   // POST in the background, then reconcile with a (non-blocking) reload. The DB
@@ -316,8 +335,14 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         r.email.toLowerCase().includes(q) ||
         (r.phone || "").includes(q),
     );
-  if (hotOnly) view = view.filter((r) => r.intentLabel !== "Cool");
+  if (hotOnly) view = view.filter((r) => r.intentLabel !== "Solo");
   if (sortIntent) view.sort((a, b) => b.intentScore - a.intentScore);
+
+  // Clamp the page against the current view, then slice out the page rows.
+  const totalPages = Math.max(1, Math.ceil(view.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const paged = view.slice(pageStart, pageStart + pageSize);
 
   return (
     <div className="py-8">
@@ -329,6 +354,9 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/room" className="btn btn-ghost px-4 py-2 text-sm">
             Room view
+          </Link>
+          <Link href="/room/insights" className="btn btn-ghost px-4 py-2 text-sm">
+            Question insights
           </Link>
           <button
             onClick={() => exportCsv(view)}
@@ -466,7 +494,7 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
             </tr>
           </thead>
           <tbody>
-            {view.map((r) => (
+            {paged.map((r) => (
               <tr key={r.id} className="border-b border-[var(--line)] last:border-0">
                 <Td>
                   <button
@@ -637,6 +665,50 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
         </table>
       </div>
 
+      {/* Pagination */}
+      {view.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span>
+              {pageStart + 1}–{Math.min(pageStart + pageSize, view.length)} of {view.length}
+            </span>
+            <label className="flex items-center gap-1">
+              <span>per page</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="input !w-auto !px-2 !py-1 text-xs"
+              >
+                {[10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="btn btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
+            >
+              ← Prev
+            </button>
+            <span className="text-xs text-muted">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="btn btn-ghost px-3 py-1.5 text-sm disabled:opacity-40"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
       <AnswersModal record={detail} onClose={() => setDetail(null)} />
     </div>
   );
@@ -665,9 +737,9 @@ function AnswersModal({ record, onClose }: { record: Rec | null; onClose: () => 
             </p>
             {record.answers && record.answers.length > 0 && (
               <button
-                onClick={() => downloadRecordPdf(record)}
+                onClick={() => void downloadRecordPdf(record)}
                 className="chip hover:!border-gold"
-                title="Download this record as a PDF"
+                title="Download this record as a PDF (radar, insights, full answers)"
               >
                 Download PDF
               </button>
@@ -850,73 +922,324 @@ function escapeHtml(v: unknown): string {
     .replace(/>/g, "&gt;");
 }
 
+/** A one-line read on enrollment intent, for the report's insights block. */
+function intentNote(label: Intent): string {
+  if (label === "Elite") return "High enrollment intent - prioritise a direct conversation.";
+  if (label === "Guided") return "Moderate intent - the right nudge and offer can convert.";
+  return "Lower intent - lead with value before pitching.";
+}
+
 /**
- * Open a clean, printable view of one person's full Reality Check (header facts +
- * every question with their selected option marked) and trigger the browser's
- * print dialog, where it can be saved as a PDF. No PDF library needed.
+ * Render the 5-dimension readiness radar (the app's signature pentagon) onto an
+ * offscreen canvas and return it as a PNG data URL for embedding in the PDF.
+ * `values` are 0..1 in DIMENSIONS order.
  */
-function downloadRecordPdf(r: Rec) {
-  const win = window.open("", "_blank", "width=820,height=1000");
-  if (!win) {
-    alert("Allow pop-ups for this site to download the PDF.");
-    return;
+function radarDataUrl(labels: string[], values: number[]): string {
+  const size = 520;
+  const scale = 2; // render at 2x for a crisp image in the PDF
+  const canvas = document.createElement("canvas");
+  canvas.width = size * scale;
+  canvas.height = size * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, size, size);
+
+  const cx = size / 2;
+  const cy = size / 2 + 4;
+  const R = size * 0.33;
+  const n = labels.length;
+  const angle = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+
+  // concentric rings
+  ctx.strokeStyle = "#e6e6e6";
+  ctx.lineWidth = 1;
+  for (let ring = 1; ring <= 4; ring++) {
+    const rr = (R * ring) / 4;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = angle(i % n);
+      const x = cx + rr * Math.cos(a);
+      const yy = cy + rr * Math.sin(a);
+      if (i === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
   }
-  const facts: [string, unknown][] = [
-    ["Email", r.email],
-    ["Phone", r.phone || "-"],
-    ["Session", r.session.replace("_", " ")],
-    ["Readiness score", r.totalScore != null ? `${r.totalScore} / 100` : "-"],
-    ["Tier", r.tier || "-"],
-    ["Archetype", r.archetype || "-"],
-    ["Weakest dimension", r.weakestDim || "-"],
-    ["Consistency", r.consistency != null ? `${r.consistency} / 10` : "-"],
-    ["Years planning", r.yearsPlanning ? YEARS_SHORT[r.yearsPlanning] : "-"],
-    ["Intent", `${r.intentLabel} (${r.intentScore})`],
-    ["Submitted (IST)", formatISTDateTime(r.createdAt)],
-  ];
-  const factsHtml = facts
-    .map(([k, v]) => `<div class="fact"><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`)
-    .join("");
-  const questionsHtml = QUESTIONS.map((q, i) => {
-    const picked = r.answers?.[i];
-    const opts = q.options
-      .map((o) => {
-        const sel = picked === o.points;
-        return `<li class="${sel ? "sel" : ""}">${escapeHtml(o.label)} <span class="pts">(${o.points})</span>${sel ? " ✓" : ""}</li>`;
-      })
-      .join("");
-    const unanswered = picked == null ? `<p class="na">Not answered.</p>` : "";
-    return `<div class="q"><p class="prompt"><b>${q.id}.</b> ${escapeHtml(q.prompt)}</p><ul>${opts}</ul>${unanswered}</div>`;
-  }).join("");
-  const doc = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(
-    r.name || r.email,
-  )} — Reality Check</title><style>
-    *{box-sizing:border-box}
-    body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;margin:40px;line-height:1.45}
-    h1{font-size:22px;margin:0 0 2px}
-    .sub{color:#666;font-size:13px;margin:0 0 18px}
-    .facts{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin-bottom:24px}
-    .fact{display:flex;justify-content:space-between;gap:12px;font-size:13px;border-bottom:1px dotted #eee;padding:2px 0}
-    .fact span{color:#777}
-    .q{margin-bottom:16px;page-break-inside:avoid}
-    .prompt{font-size:14px;margin:0 0 6px}
-    ul{list-style:none;padding:0;margin:0}
-    li{font-size:13px;padding:6px 10px;border:1px solid #e5e5e5;border-radius:6px;margin-bottom:4px;color:#777}
-    li.sel{border-color:#c79a3a;background:#fbf4e3;color:#1a1a1a;font-weight:600}
-    .pts{color:#999;font-weight:400;font-size:11px}
-    .na{font-size:12px;color:#999;font-style:italic;margin:2px 0 0}
-    @media print{body{margin:18mm}}
-  </style></head><body>
-    <h1>${escapeHtml(r.name || "—")}</h1>
-    <p class="sub">Germany Career Summit — Reality Check record</p>
-    <div class="facts">${factsHtml}</div>
-    <h2 style="font-size:15px;margin:0 0 12px">Question-by-question answers</h2>
-    ${questionsHtml}
-    <script>window.onload=function(){window.focus();window.print();}<\/script>
-  </body></html>`;
-  win.document.open();
-  win.document.write(doc);
-  win.document.close();
+
+  // spokes + axis labels
+  ctx.fillStyle = "#555";
+  ctx.font = "600 13px -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i < n; i++) {
+    const a = angle(i);
+    ctx.strokeStyle = "#e6e6e6";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+    ctx.stroke();
+    ctx.fillText(labels[i], cx + (R + 28) * Math.cos(a), cy + (R + 16) * Math.sin(a));
+  }
+
+  // data polygon
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const idx = i % n;
+    const rr = R * Math.max(0, Math.min(1, values[idx]));
+    const a = angle(idx);
+    const x = cx + rr * Math.cos(a);
+    const yy = cy + rr * Math.sin(a);
+    if (i === 0) ctx.moveTo(x, yy);
+    else ctx.lineTo(x, yy);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "rgba(199,154,58,0.22)";
+  ctx.fill();
+  ctx.strokeStyle = "#c18e2b";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // vertex dots
+  for (let i = 0; i < n; i++) {
+    const rr = R * Math.max(0, Math.min(1, values[i]));
+    const a = angle(i);
+    ctx.beginPath();
+    ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, Math.PI * 2);
+    ctx.fillStyle = "#c18e2b";
+    ctx.fill();
+  }
+
+  return canvas.toDataURL("image/png");
+}
+
+/**
+ * Build a one-click PDF report of a person's Reality Check and download it
+ * directly (no pop-up / print dialog). Includes the readiness radar, a
+ * per-dimension bar breakdown, plain-language insights derived from their own
+ * answers, and the full question-by-question record. Uses jsPDF (lazy-loaded).
+ */
+async function downloadRecordPdf(r: Rec) {
+  const { jsPDF } = await import("jspdf");
+
+  const answers = r.answers ?? [];
+  const dimScores = answers.length > 0 ? computeDimScores(answers) : null;
+  const tier: Tier | null =
+    (r.tier as Tier) || (r.totalScore != null ? getTier(r.totalScore) : null);
+
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const PAGE_W = 210;
+  const PAGE_H = 297;
+  const M = 15;
+  const W = PAGE_W - M * 2;
+
+  const DARK = [26, 26, 26] as const;
+  const MUTED = [110, 110, 110] as const;
+  const GOLD = [193, 142, 43] as const;
+  const RED = [200, 60, 45] as const;
+  const GREEN = [42, 145, 95] as const;
+  const LINE = [225, 225, 225] as const;
+  const tc = (c: readonly number[]) => doc.setTextColor(c[0], c[1], c[2]);
+  const fc = (c: readonly number[]) => doc.setFillColor(c[0], c[1], c[2]);
+
+  let y = M + 2;
+  const ensure = (h: number) => {
+    if (y + h > PAGE_H - M) {
+      doc.addPage();
+      y = M + 2;
+    }
+  };
+  const para = (
+    text: string,
+    opts: { size?: number; color?: readonly number[]; font?: string; lh?: number; gap?: number } = {},
+  ) => {
+    const { size = 9.5, color = DARK, font = "normal", lh = 4.4, gap = 2 } = opts;
+    doc.setFont("helvetica", font);
+    doc.setFontSize(size);
+    tc(color);
+    for (const ln of doc.splitTextToSize(text, W)) {
+      ensure(lh);
+      doc.text(ln, M, y);
+      y += lh;
+    }
+    y += gap;
+  };
+  const heading = (t: string) => {
+    ensure(11);
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    tc(DARK);
+    doc.text(t, M, y);
+    y += 1.5;
+    doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.setLineWidth(0.5);
+    doc.line(M, y, M + 22, y);
+    y += 5;
+  };
+
+  // ── Header ──────────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  tc(DARK);
+  doc.text(r.name || r.email, M, y + 6);
+  y += 11;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  tc(MUTED);
+  doc.text("Germany Career Summit - Reality Check report", M, y);
+  y += 6;
+
+  // ── Hero band: score + tier + key facts ─────────────────────────────────────
+  const bandH = 26;
+  ensure(bandH + 4);
+  fc([250, 247, 240]);
+  doc.roundedRect(M, y, W, bandH, 2.5, 2.5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(30);
+  tc(DARK);
+  const scoreStr = r.totalScore != null ? String(r.totalScore) : "—";
+  doc.text(scoreStr, M + 8, y + 16);
+  const sw = doc.getTextWidth(scoreStr);
+  doc.setFontSize(11);
+  tc(MUTED);
+  doc.text("/100", M + 8 + sw + 2, y + 16);
+  if (tier) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    tc(GOLD);
+    doc.text(tier, M + 8, y + 22);
+  }
+  const rx = M + W * 0.48;
+  let ry = y + 7;
+  const fact = (label: string, value: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    tc(MUTED);
+    doc.text(label, rx, ry);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    tc(DARK);
+    doc.text(value, rx + 28, ry);
+    ry += 5.5;
+  };
+  fact("Archetype", r.archetype || "—");
+  fact("Intent", `${r.intentLabel} (${r.intentScore})`);
+  fact("Consistency", r.consistency != null ? `${r.consistency} / 10` : "—");
+  fact("Session", r.session.replace("_", " "));
+  y += bandH + 6;
+
+  // ── Readiness radar + dimension bars ────────────────────────────────────────
+  if (dimScores) {
+    const labels = DIMENSIONS.map((d) => DIM_META[d].short);
+    const values = DIMENSIONS.map((d) => dimScores[d]);
+    const png = radarDataUrl(labels, values);
+    if (png) {
+      const imgSize = 92;
+      ensure(imgSize + 2);
+      doc.addImage(png, "PNG", (PAGE_W - imgSize) / 2, y, imgSize, imgSize);
+      y += imgSize + 2;
+    }
+
+    heading("Dimension breakdown");
+    for (const d of DIMENSIONS) {
+      const v = Math.max(0, Math.min(1, dimScores[d]));
+      const pct = Math.round(v * 100);
+      ensure(8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      tc(DARK);
+      doc.text(DIM_META[d].short, M, y + 3);
+      const barX = M + 42;
+      const barW = W - 42 - 12;
+      fc([234, 234, 234]);
+      doc.roundedRect(barX, y, barW, 4, 1, 1, "F");
+      const col = pct >= 80 ? GREEN : pct >= 50 ? GOLD : RED;
+      fc(col);
+      if (v > 0) doc.roundedRect(barX, y, Math.max(barW * v, 1.5), 4, 1, 1, "F");
+      doc.setFontSize(8);
+      tc(MUTED);
+      doc.text(`${pct}%`, M + W, y + 3.3, { align: "right" });
+      y += 7.5;
+    }
+    y += 1;
+  }
+
+  // ── Insights derived from their answers ─────────────────────────────────────
+  heading("What this means");
+  if (tier) para(TIER_META[tier].blurb);
+
+  if (dimScores) {
+    const strong = DIMENSIONS.filter((d) => dimScores[d] >= STRONG_DIM_THRESHOLD);
+    if (strong.length > 0) {
+      para("Strengths", { font: "bold", size: 10, gap: 1 });
+      for (const d of strong) para(`- ${DIM_META[d].short}: ${DIM_META[d].strong}`, { color: MUTED });
+    } else {
+      const top = [...DIMENSIONS].sort((a, b) => dimScores[b] - dimScores[a])[0];
+      para("Relative strength", { font: "bold", size: 10, gap: 1 });
+      para(`- ${DIM_META[top].short}: ${DIM_META[top].strong}`, { color: MUTED });
+    }
+
+    if (hasClearWeakness(dimScores)) {
+      const weak = [...DIMENSIONS].sort((a, b) => dimScores[a] - dimScores[b])[0];
+      const arc = getArchetype(weak);
+      para("Biggest gap", { font: "bold", size: 10, gap: 1 });
+      para(`- ${DIM_META[weak].short}: ${DIM_META[weak].weak}`, { color: MUTED });
+      para(`Archetype: ${arc.name}. Belief - "${arc.falseBelief}" Reframe - ${arc.reframe}`, {
+        color: MUTED,
+      });
+    } else {
+      para("Strong and even across all five dimensions - keep the system running.", { color: MUTED });
+    }
+  }
+
+  const eng: string[] = [];
+  if (r.yearsPlanning && YEARS_SHORT[r.yearsPlanning]) eng.push(`planning for ${YEARS_SHORT[r.yearsPlanning]}`);
+  if (r.consistency != null) eng.push(`consistency ${r.consistency}/10`);
+  if (eng.length > 0) {
+    para("Engagement", { font: "bold", size: 10, gap: 1 });
+    para(`They report ${eng.join(" and ")}. ${intentNote(r.intentLabel)}`, { color: MUTED });
+  }
+
+  // ── Full question-by-question record (fresh page) ───────────────────────────
+  if (answers.length > 0) {
+    doc.addPage();
+    y = M + 2;
+    heading("Question-by-question answers");
+    QUESTIONS.forEach((q, i) => {
+      const picked = answers[i];
+      ensure(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      tc(DARK);
+      for (const ln of doc.splitTextToSize(`${q.id}. ${q.prompt}`, W)) {
+        ensure(4.6);
+        doc.text(ln, M, y);
+        y += 4.6;
+      }
+      y += 1;
+      for (const opt of q.options) {
+        const sel = picked === opt.points;
+        doc.setFont("helvetica", sel ? "bold" : "normal");
+        doc.setFontSize(8.5);
+        tc(sel ? GOLD : MUTED);
+        const mark = sel ? "> " : "   ";
+        for (const ln of doc.splitTextToSize(`${mark}${opt.label} (${opt.points})`, W - 4)) {
+          ensure(4.4);
+          doc.text(ln, M + 3, y);
+          y += 4.4;
+        }
+      }
+      if (picked == null) para("Not answered.", { color: MUTED, size: 8, font: "italic" });
+      y += 2.5;
+    });
+  }
+
+  const safe = (r.name || r.email || "record")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  doc.save(`${safe || "record"}-reality-check.pdf`);
 }
 
 function Th({ children }: { children: React.ReactNode }) {

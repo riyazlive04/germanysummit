@@ -1,22 +1,23 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import PlaybookForm from "@/components/playbook/PlaybookForm";
+import BookLanding from "@/components/book/BookLanding";
 
 export const metadata = {
   title: "The Secret Playbook - Free Download",
   description:
-    "Get Ameen's inside-Germany method as a free PDF. Enter your email and download The Secret Playbook.",
+    "Ameen's inside-Germany system in one free PDF: the exact method that gets Indian engineers seen, shortlisted, and hired. Enter your email and download The Secret Playbook.",
 };
 
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export default function PlaybookPage({
+export default function BookPage({
   searchParams,
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
+  // Prefill from share links (e.g. WhatsApp / QR) so attendees skip typing.
   const ff = {
     name: first(searchParams.ff_name),
     email: first(searchParams.ff_email),
@@ -29,7 +30,7 @@ export default function PlaybookPage({
     <>
       <Header />
       <main className="mx-auto max-w-6xl px-5">
-        <PlaybookForm ff={ff} session={session} source={source} />
+        <BookLanding ff={ff} session={session} source={source} />
       </main>
       <Footer />
     </>

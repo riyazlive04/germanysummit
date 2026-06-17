@@ -15,6 +15,8 @@ const nextConfig = {
       { source: "/arrival", destination: "/reality-check?session=on_arrival", permanent: false },
       { source: "/end-of-day", destination: "/reality-check?session=end_of_day", permanent: false },
       { source: "/pre-event", destination: "/reality-check?session=pre_event", permanent: false },
+      // The Secret Playbook now lives at /book; keep the old link working.
+      { source: "/playbook", destination: "/book", permanent: false },
     ];
   },
 };

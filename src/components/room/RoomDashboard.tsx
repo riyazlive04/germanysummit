@@ -185,6 +185,12 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
             Live answers →
           </Link>
           <Link
+            href="/room/insights"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Insights →
+          </Link>
+          <Link
             href="/room/records"
             className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
           >
