@@ -693,7 +693,7 @@ function AnswersModal({ record, onClose }: { record: Rec | null; onClose: () => 
                             key={opt.label}
                             className={`rounded-lg border px-3 py-2 text-sm ${
                               isPicked
-                                ? "border-gold bg-[var(--anchor)] text-text"
+                                ? "border-gold bg-[var(--anchor)] font-semibold text-gold"
                                 : "border-[var(--line)] text-muted"
                             }`}
                           >
