@@ -163,8 +163,8 @@ export default function BookLanding({
     <div className="animate-rise">
       {/* Hero - fills the viewport below the sticky header so the whole banner is
           visible without scrolling; degrades gracefully (grows) on short screens. */}
-      <section className="relative mb-10 mt-4 overflow-hidden rounded-3xl bg-[var(--anchor)] lg:min-h-[calc(100svh-92px)]">
-        <div className="grid h-full items-stretch gap-2 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative mb-10 mt-4 overflow-hidden rounded-3xl bg-[var(--anchor)]">
+        <div className="grid items-stretch gap-2 lg:min-h-[calc(100svh-92px)] lg:grid-cols-[1.05fr_0.95fr]">
           {/* Copy + capture form, vertically centered */}
           <div className="relative z-10 flex flex-col justify-center px-6 py-8 sm:px-10 sm:py-10">
             <span className="eyebrow !text-gold-soft">Free download · Germany Career Summit 2026</span>
@@ -185,9 +185,9 @@ export default function BookLanding({
           </div>
 
           {/* Transparent figure: fixed compact height on mobile, fills the band on desktop */}
-          <div className="relative h-[240px] w-full sm:h-[300px] lg:h-auto">
+          <div className="relative h-[260px] w-full sm:h-[320px] lg:h-auto">
             <div
-              className="absolute inset-0 bg-contain bg-bottom bg-no-repeat"
+              className="absolute inset-0 bg-contain bg-bottom bg-no-repeat lg:bg-right-bottom"
               style={{ backgroundImage: "url('/brand/ameen-book.png')" }}
             />
           </div>
