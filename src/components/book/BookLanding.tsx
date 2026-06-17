@@ -128,7 +128,7 @@ export default function BookLanding({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="First name (optional)"
+          placeholder="First name"
           className="input w-full"
           autoComplete="given-name"
         />
@@ -151,7 +151,7 @@ export default function BookLanding({
         disabled={busy}
         className="btn-gold px-7 py-3.5 text-[15px] disabled:opacity-60"
       >
-        {busy ? "Preparing your download…" : "Get the book (free)↓"}
+        {busy ? "Preparing your download…" : "Get the book (free)"}
       </button>
       <p className="text-xs text-muted">
         Instant PDF · 14 chapters · no spam.
