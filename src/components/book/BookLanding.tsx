@@ -187,7 +187,7 @@ export default function BookLanding({
           {/* Transparent figure: fixed compact height on mobile, fills the band on desktop */}
           <div className="relative h-[260px] w-full sm:h-[320px] lg:h-auto">
             <div
-              className="absolute inset-0 bg-contain bg-bottom bg-no-repeat lg:bg-right-bottom"
+              className="absolute inset-0 bg-contain bg-bottom bg-no-repeat lg:[background-position:55%_100%]"
               style={{ backgroundImage: "url('/brand/ameen-book.png')" }}
             />
           </div>
