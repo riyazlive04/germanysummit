@@ -35,10 +35,8 @@ type Program = { total: number; claimed: number; buyers: { name: string; at: str
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
 
 const FILTERS: { value: SessionFilter; label: string }[] = [
-  { value: "", label: "All" },
   { value: "pre_event", label: "Pre-event" },
-  { value: "on_arrival", label: "On arrival" },
-  { value: "end_of_day", label: "End of day" },
+  { value: "end_of_day", label: "Post event" },
 ];
 
 const TIER_COLOR: Record<Tier, string> = {
@@ -52,7 +50,7 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
   const [key, setKey] = useState(initialKey ?? "");
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [data, setData] = useState<RoomData | null>(null);
-  const [filter, setFilter] = useState<SessionFilter>("");
+  const [filter, setFilter] = useState<SessionFilter>("pre_event");
   const [error, setError] = useState<string | null>(null);
   const keyRef = useRef(key);
   keyRef.current = key;
@@ -299,15 +297,14 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
 }
 
 /** Live enrollment banner for the buying window (managed from /room/records).
- * Guided Mode is the scarcity hero; Solo Mode tracks alongside. Both show the
- * real names of who just joined - live social proof. */
+ * Guided Mode is the scarcity hero; it shows the real names of who just joined -
+ * live social proof. */
 function SeatScarcity({ seats }: { seats: { guided: Program; solo: Program } }) {
   const g = seats.guided;
-  const s = seats.solo;
   const gLeft = Math.max(0, g.total - g.claimed);
   const gPct = g.total > 0 ? (g.claimed / g.total) * 100 : 0;
   return (
-    <section className="panel-anchor grid gap-6 p-7 sm:grid-cols-[1.3fr_1fr] sm:p-8">
+    <section className="panel-anchor p-7 sm:p-8">
       {/* Guided Mode - the scarcity hero */}
       <div>
         <span className="eyebrow">Guided Mode · seats in this batch</span>
@@ -324,18 +321,6 @@ function SeatScarcity({ seats }: { seats: { guided: Program; solo: Program } }) 
           />
         </div>
         <BuyerNames buyers={g.buyers} />
-      </div>
-
-      {/* Solo Mode */}
-      <div className="sm:border-l sm:border-[color:rgba(245,242,234,0.15)] sm:pl-6">
-        <span className="eyebrow">Solo Mode</span>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="nums font-display text-4xl leading-none text-on-anchor">
-            {s.claimed}
-          </span>
-          <span className="text-on-anchor">joined of {s.total}</span>
-        </div>
-        <BuyerNames buyers={s.buyers} />
       </div>
     </section>
   );

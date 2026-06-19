@@ -352,11 +352,23 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           <span className="eyebrow !text-muted">{records.length} people</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/room" className="btn btn-ghost px-4 py-2 text-sm">
-            Room view
+          <Link
+            href="/room/live"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Live answers →
           </Link>
-          <Link href="/room/insights" className="btn btn-ghost px-4 py-2 text-sm">
-            Question insights
+          <Link
+            href="/room/insights"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Insights →
+          </Link>
+          <Link
+            href="/room/records"
+            className="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
+          >
+            Records →
           </Link>
           <button
             onClick={() => exportCsv(view)}

@@ -34,10 +34,8 @@ type Data = AnswerDistribution & {
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
 
 const FILTERS: { value: SessionFilter; label: string }[] = [
-  { value: "", label: "All" },
   { value: "pre_event", label: "Pre-event" },
-  { value: "on_arrival", label: "On arrival" },
-  { value: "end_of_day", label: "End of day" },
+  { value: "end_of_day", label: "Post event" },
 ];
 
 function painPct(q: QuestionDistribution): number {
@@ -58,7 +56,7 @@ export default function LivePoll({
   const [key, setKey] = useState(initialKey ?? "");
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [data, setData] = useState<Data | null>(null);
-  const [filter, setFilter] = useState<SessionFilter>("");
+  const [filter, setFilter] = useState<SessionFilter>("pre_event");
   const [section, setSection] = useState(
     initialSection != null ? Math.max(0, Math.min(initialSection, SECTION_COUNT - 1)) : 0,
   ); // 0..5
@@ -214,11 +212,24 @@ export default function LivePoll({
               {f.label}
             </button>
           ))}
+          <span className="mx-1 h-4 w-px bg-[var(--line)]" />
           <Link
-            href="/room"
-            className="ml-1 rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+            href="/room/live"
+            className="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
           >
-            Room →
+            Live answers →
+          </Link>
+          <Link
+            href="/room/insights"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Insights →
+          </Link>
+          <Link
+            href="/room/records"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Records →
           </Link>
         </div>
       </div>

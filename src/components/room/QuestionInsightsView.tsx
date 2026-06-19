@@ -29,10 +29,8 @@ type Rec = {
 type SessionFilter = "" | "pre_event" | "on_arrival" | "end_of_day";
 
 const FILTERS: { value: SessionFilter; label: string }[] = [
-  { value: "", label: "All" },
   { value: "pre_event", label: "Pre-event" },
-  { value: "on_arrival", label: "On arrival" },
-  { value: "end_of_day", label: "End of day" },
+  { value: "end_of_day", label: "Post event" },
 ];
 
 // Answer strength → brand colour, shared by the donut, bars, and gauge.
@@ -47,7 +45,7 @@ export default function QuestionInsightsView({ initialKey }: { initialKey?: stri
   const [key, setKey] = useState(initialKey ?? "");
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [records, setRecords] = useState<Rec[]>([]);
-  const [filter, setFilter] = useState<SessionFilter>("");
+  const [filter, setFilter] = useState<SessionFilter>("pre_event");
   const [error, setError] = useState<string | null>(null);
   const [activeDim, setActiveDim] = useState<Dimension>(DIMENSIONS[0]);
   const keyRef = useRef(key);
@@ -178,8 +176,20 @@ export default function QuestionInsightsView({ initialKey }: { initialKey?: stri
             </button>
           ))}
           <Link
-            href="/room/records"
+            href="/room/live"
             className="ml-1 rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Live answers →
+          </Link>
+          <Link
+            href="/room/insights"
+            className="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
+          >
+            Insights →
+          </Link>
+          <Link
+            href="/room/records"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
           >
             Records →
           </Link>
