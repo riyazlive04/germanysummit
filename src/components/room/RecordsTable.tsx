@@ -370,6 +370,12 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           >
             Records →
           </Link>
+          <Link
+            href="/room/feedback"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Feedback →
+          </Link>
           <button
             onClick={() => exportCsv(view)}
             disabled={busy || view.length === 0}

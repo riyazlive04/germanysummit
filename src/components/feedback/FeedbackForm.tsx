@@ -23,9 +23,9 @@ const PLAN_OPTIONS: { value: PlanStuck; label: string }[] = [
 ];
 
 const GUIDED_OPTIONS: { value: Guided; label: string }[] = [
-  { value: "enrolled", label: "Yes — I enrolled" },
-  { value: "interested", label: "Yes — interested, still thinking" },
-  { value: "need_time", label: "Not yet — need more time" },
+  { value: "enrolled", label: "Yes - I enrolled" },
+  { value: "interested", label: "Yes - interested, still thinking" },
+  { value: "need_time", label: "Not yet - need more time" },
   { value: "not_for_me", label: "Not for me right now" },
 ];
 
@@ -111,14 +111,14 @@ export default function FeedbackForm() {
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-[color:rgba(245,242,234,0.78)] sm:text-base">
             Your honest words just made the next summit better. And this isn&apos;t the
-            end of anything — it&apos;s <span className="text-gold">day one</span> of your
+            end of anything - it&apos;s <span className="text-gold">day one</span> of your
             Germany plan. You walked in with a dream; you&apos;re walking out with a system.
           </p>
           <p className="mx-auto mt-5 max-w-md font-display text-lg text-on-anchor">
             See you in Germany. 🇩🇪
           </p>
           <p className="mt-1 text-xs text-[color:rgba(245,242,234,0.55)]">
-            — Ameen &amp; the B2 Consultants team
+            - Ameen &amp; the B2 Consultants team
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -144,10 +144,10 @@ export default function FeedbackForm() {
       <header className="mb-8 text-center">
         <span className="eyebrow">Germany Career Summit 2026</span>
         <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
-          Before you go — <span className="text-gold">two minutes.</span>
+          Before you go - <span className="text-gold">two minutes.</span>
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-muted">
-          Your honest answer helps us make the next summit better. No wrong answers —
+          Your honest answer helps us make the next summit better. No wrong answers -
           just tell us the truth.
         </p>
       </header>
@@ -184,7 +184,7 @@ export default function FeedbackForm() {
             onChange={(e) => setImprove(e.target.value)}
             rows={3}
             maxLength={2000}
-            placeholder="Be candid — this is how we improve."
+            placeholder="Be candid - this is how we improve."
             className="input w-full resize-y"
           />
         </Field>
@@ -228,7 +228,7 @@ export default function FeedbackForm() {
         {/* Optional follow-up */}
         <Field n={7} label="Your name and WhatsApp number">
           <p className="-mt-1 mb-3 text-xs text-muted">
-            Optional — only if you&apos;d like us to follow up with you personally.
+            Optional - only if you&apos;d like us to follow up with you personally.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <input

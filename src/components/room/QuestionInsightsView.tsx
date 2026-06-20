@@ -193,6 +193,12 @@ export default function QuestionInsightsView({ initialKey }: { initialKey?: stri
           >
             Records →
           </Link>
+          <Link
+            href="/room/feedback"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Feedback →
+          </Link>
         </div>
       </div>
 
