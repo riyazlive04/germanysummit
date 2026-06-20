@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * it, and are they allowed to (re)take right now?
  */
 export async function POST(req: Request) {
-  let body: { email?: string; phone?: string };
+  let body: { email?: string; phone?: string; session?: string };
   try {
     body = await req.json();
   } catch {
@@ -31,7 +31,9 @@ export async function POST(req: Request) {
   }
 
   const phoneNorm = normalizePhone(body.phone);
-  const lock = await evaluateLock(email, phoneNorm);
+  // Pass the session so the end-of-day pulse self-unlocks the first retake here
+  // too (matching the save gate) - no "event day" toggle needed on the client.
+  const lock = await evaluateLock(email, phoneNorm, body.session);
   const config = await getAppConfig();
 
   // For the event-day re-score, surface this person's previous answers so the

@@ -134,7 +134,7 @@ export default function QuizFlow({
       const res = await fetch("/api/reality-check/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, phone }),
+        body: JSON.stringify({ email, phone, session: session ?? "pre_event" }),
       });
       const data = await res.json();
       return {
