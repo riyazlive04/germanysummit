@@ -121,16 +121,36 @@ export default function FeedbackForm() {
             - Ameen &amp; the B2 Consultants team
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/pre-order" className="btn-gold px-6 py-3 text-sm">
-              Get The Secret Playbook →
-            </Link>
-            <Link
-              href="/my-results"
-              className="rounded-xl border border-[color:rgba(245,242,234,0.2)] px-6 py-3 text-sm text-on-anchor transition-colors hover:border-gold hover:text-gold"
-            >
-              See my results
-            </Link>
+          <div className="mx-auto mt-8 max-w-md">
+            <p className="text-sm text-[color:rgba(245,242,234,0.72)]">
+              Haven&apos;t joined Guided Mode yet? Talk to the team before you decide.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <a
+                href="https://optin.b2consultants.de/apply"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-gold px-6 py-3.5 text-sm"
+              >
+                Book a Guided Mode call →
+              </a>
+              <a
+                href="https://optin.b2consultants.de/sss"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl border border-[color:rgba(245,242,234,0.25)] px-6 py-3.5 text-sm text-on-anchor transition-colors hover:border-gold hover:text-gold"
+              >
+                Talk to Ameen - Solo Mode →
+              </a>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-[color:rgba(245,242,234,0.6)]">
+              <Link href="/pre-order" className="transition-colors hover:text-gold">
+                Get The Secret Playbook →
+              </Link>
+              <Link href="/my-results" className="transition-colors hover:text-gold">
+                See my results →
+              </Link>
+            </div>
           </div>
         </section>
       </div>
