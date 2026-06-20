@@ -59,6 +59,7 @@ export default function CompareView({ initialKey }: { initialKey?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"details" | "audience">("details");
   const [activeDim, setActiveDim] = useState<Dimension>(DIMENSIONS[0]);
+  const [modalQ, setModalQ] = useState<{ pre?: QDist; post?: QDist } | null>(null);
   const keyRef = useRef(key);
   keyRef.current = key;
 
@@ -109,9 +110,9 @@ export default function CompareView({ initialKey }: { initialKey?: string }) {
     void load();
   }, [authed, key, load]);
 
-  // Arrow keys flip topics in the audience tab.
+  // Arrow keys flip topics in the audience tab (off while a question modal is open).
   useEffect(() => {
-    if (authed !== true || tab !== "audience") return;
+    if (authed !== true || tab !== "audience" || modalQ) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft")
         setActiveDim((d) => DIMENSIONS[Math.max(0, DIMENSIONS.indexOf(d) - 1)]);
@@ -120,7 +121,7 @@ export default function CompareView({ initialKey }: { initialKey?: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [authed, tab]);
+  }, [authed, tab, modalQ]);
 
   // ── Key gate ───────────────────────────────────────────────────────────────
   if (authed !== true) {
@@ -335,15 +336,24 @@ export default function CompareView({ initialKey }: { initialKey?: string }) {
           </div>
 
           <div className="grid gap-4">
-            {topicQs.map((q) => (
-              <QuestionCompareCard
-                key={q.id}
-                pre={distById(data?.pre.dist, q.id)}
-                post={distById(data?.post.dist, q.id)}
-              />
-            ))}
+            {topicQs.map((q) => {
+              const pre = distById(data?.pre.dist, q.id);
+              const post = distById(data?.post.dist, q.id);
+              return (
+                <QuestionCompareCard
+                  key={q.id}
+                  pre={pre}
+                  post={post}
+                  onOpen={() => setModalQ({ pre, post })}
+                />
+              );
+            })}
           </div>
         </div>
+      )}
+
+      {modalQ && (
+        <QuestionModal pre={modalQ.pre} post={modalQ.post} onClose={() => setModalQ(null)} />
       )}
     </div>
   );
@@ -431,40 +441,133 @@ function DimensionShift({
   );
 }
 
-/** One question, two distributions side by side (Morning / Now). */
-function QuestionCompareCard({ pre, post }: { pre?: QDist; post?: QDist }) {
+/** One question, two distributions side by side (Morning / Now). Click to expand. */
+function QuestionCompareCard({
+  pre,
+  post,
+  onOpen,
+}: {
+  pre?: QDist;
+  post?: QDist;
+  onOpen: () => void;
+}) {
   const q = post ?? pre;
   if (!q) return null;
   const strongPre = strongPct(pre);
   const strongPost = strongPct(post);
   const shift = strongPre != null && strongPost != null ? strongPost - strongPre : null;
   return (
-    <div className="card p-5">
+    <div
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="card cursor-pointer p-5 transition-colors hover:border-gold"
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           <span className="mt-0.5 font-mono text-xs text-muted">{q.id}</span>
           <p className="text-base font-medium">{q.prompt}</p>
         </div>
-        {shift != null && (
-          <span
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs nums ${
-              shift > 0
-                ? "border-green text-green"
-                : shift < 0
-                  ? "border-red text-red"
-                  : "border-[var(--line)] text-muted"
-            }`}
-            title="Change in the share choosing the strongest answer"
-          >
-            best answer {strongPre ?? 0}% → {strongPost ?? 0}% ({shift > 0 ? "+" : ""}
-            {shift})
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {shift != null && (
+            <span
+              className={`rounded-full border px-2.5 py-1 text-xs nums ${
+                shift > 0
+                  ? "border-green text-green"
+                  : shift < 0
+                    ? "border-red text-red"
+                    : "border-[var(--line)] text-muted"
+              }`}
+              title="Change in the share choosing the strongest answer"
+            >
+              best answer {strongPre ?? 0}% → {strongPost ?? 0}% ({shift > 0 ? "+" : ""}
+              {shift})
+            </span>
+          )}
+          <span className="hidden text-xs text-muted sm:inline">⤢ Expand</span>
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DistBlock title="This morning" q={pre} />
         <DistBlock title="Right now" q={post} highlight />
+      </div>
+    </div>
+  );
+}
+
+/** Full-screen single-question reveal - the projector pop-up. */
+function QuestionModal({
+  pre,
+  post,
+  onClose,
+}: {
+  pre?: QDist;
+  post?: QDist;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const q = post ?? pre;
+  if (!q) return null;
+  const strongPre = strongPct(pre);
+  const strongPost = strongPct(post);
+  const shift = strongPre != null && strongPost != null ? strongPost - strongPre : null;
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 grid place-items-center bg-[color:rgba(0,0,0,0.78)] p-4 sm:p-8"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="card relative max-h-[92vh] w-full max-w-5xl overflow-y-auto p-6 sm:p-9"
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-lg border border-[var(--line)] text-muted transition-colors hover:border-gold hover:text-gold"
+        >
+          ✕
+        </button>
+
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3 pr-10">
+          <div className="flex items-start gap-2">
+            <span className="mt-1.5 font-mono text-xs text-muted">{q.id}</span>
+            <p className="font-display text-xl leading-snug sm:text-2xl">{q.prompt}</p>
+          </div>
+          {shift != null && (
+            <span
+              className={`nums shrink-0 rounded-full border px-3 py-1.5 text-sm ${
+                shift > 0
+                  ? "border-green text-green"
+                  : shift < 0
+                    ? "border-red text-red"
+                    : "border-[var(--line)] text-muted"
+              }`}
+            >
+              best answer {strongPre ?? 0}% → {strongPost ?? 0}% ({shift > 0 ? "+" : ""}
+              {shift})
+            </span>
+          )}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DistBlock title="This morning" q={pre} big />
+          <DistBlock title="Right now" q={post} highlight big />
+        </div>
       </div>
     </div>
   );
@@ -480,13 +583,27 @@ function strongPct(q?: QDist): number | null {
 }
 
 /** Donut + labelled bars for one phase of one question (the Insights layout). */
-function DistBlock({ title, q, highlight }: { title: string; q?: QDist; highlight?: boolean }) {
+function DistBlock({
+  title,
+  q,
+  highlight,
+  big,
+}: {
+  title: string;
+  q?: QDist;
+  highlight?: boolean;
+  big?: boolean;
+}) {
   const total = q ? q.options.reduce((s, o) => s + o.count, 0) : 0;
   const segments = q
     ? q.options.map((o) => ({ value: o.count, color: POINT_COLOR[o.points] ?? "var(--surface-2)" }))
     : [];
   return (
-    <div className={`rounded-xl border p-4 ${highlight ? "border-gold/40" : "border-[var(--line)]"}`}>
+    <div
+      className={`rounded-xl border ${big ? "p-6" : "p-4"} ${
+        highlight ? "border-gold/40" : "border-[var(--line)]"
+      }`}
+    >
       <div className="mb-3 flex items-center justify-between">
         <span className={`eyebrow ${highlight ? "!text-gold" : "!text-muted"}`}>{title}</span>
         <span className="label-mono">{total} replies</span>
@@ -494,24 +611,32 @@ function DistBlock({ title, q, highlight }: { title: string; q?: QDist; highligh
       {total === 0 ? (
         <p className="py-8 text-center text-sm text-muted">No answers this phase yet.</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-4">
+        <div className={`flex flex-wrap items-center ${big ? "gap-6" : "gap-4"}`}>
           <div className="relative shrink-0">
-            <Donut segments={segments} size={104} thickness={16} />
+            <Donut segments={segments} size={big ? 150 : 104} thickness={big ? 20 : 16} />
             <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
-              <div className="nums font-display text-lg leading-none">{total}</div>
+              <div className={`nums font-display leading-none ${big ? "text-3xl" : "text-lg"}`}>
+                {total}
+              </div>
             </div>
           </div>
-          <div className="grid min-w-[160px] flex-1 gap-1.5">
+          <div className={`grid flex-1 ${big ? "min-w-[220px] gap-2.5" : "min-w-[160px] gap-1.5"}`}>
             {q!.options.map((o) => (
               <div key={o.label} className="grid gap-0.5">
-                <div className="flex items-center justify-between gap-2 text-xs">
+                <div
+                  className={`flex items-center justify-between gap-2 ${big ? "text-sm" : "text-xs"}`}
+                >
                   <span className="text-muted">
                     <span className="mr-1.5 font-mono text-[0.65rem]">{o.points}</span>
                     {o.label}
                   </span>
                   <span className="nums shrink-0 text-muted">{o.pct}%</span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
+                <div
+                  className={`w-full overflow-hidden rounded-full bg-[var(--surface-2)] ${
+                    big ? "h-2.5" : "h-1.5"
+                  }`}
+                >
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${o.pct}%`, backgroundColor: POINT_COLOR[o.points] }}
