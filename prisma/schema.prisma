@@ -95,6 +95,36 @@ model Submission {
   @@index([phoneNorm])
 }
 
+// Post-event feedback captured on /feedback (the closing "two-minute" survey).
+// Deliberately standalone - NOT tied to a Submission - so it works for walk-ins
+// who never took the Reality Check; the optional name + WhatsApp let the team
+// follow up personally. Stored values are the encoded option keys; the human
+// labels live in the form/UI.
+model Feedback {
+  id String @id @default(cuid())
+
+  nps    Int //   0..10  — "how likely to recommend" (Net Promoter)
+  rating Int //   1..10  — "overall, how would you rate today"
+
+  valuable String? // "the most valuable part of today" (free text)
+  improve  String? // "what could have been better" (free text)
+
+  planStuck String // 'lt3m' | '3to12m' | '1to2y' | 'gt2y'  — how long stuck
+  guided    String // 'enrolled' | 'interested' | 'need_time' | 'not_for_me'
+
+  // Optional follow-up identity (anonymous if left blank).
+  name      String?
+  phone     String?
+  phoneNorm String? // last-10-digit normalized, to match back to a Submission
+
+  session String  @default("end_of_day")
+  source  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([phoneNorm])
+}
+
 // Single-row app configuration toggled by the admin from /room/records.
 model AppConfig {
   id              String   @id @default("singleton")
