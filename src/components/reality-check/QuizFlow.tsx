@@ -355,7 +355,7 @@ export default function QuizFlow({
     return (
       <div className="animate-rise py-8">
         <ResultView result={result} onRestart={reset} />
-        <DeliveryNote status={saveStatus} hasPhone={!!identity.phone} />
+        <DeliveryNote status={saveStatus} />
       </div>
     );
   }
@@ -570,13 +570,11 @@ export default function QuizFlow({
   );
 }
 
-/** Subtle, non-blocking confirmation that the result was saved / will be sent. */
+/** Subtle, non-blocking confirmation that the result was saved. */
 function DeliveryNote({
   status,
-  hasPhone,
 }: {
   status: SaveStatus;
-  hasPhone: boolean;
 }) {
   if (status === "idle") return null;
 
@@ -585,9 +583,7 @@ function DeliveryNote({
       saving: { dot: "var(--muted)", text: "Saving your result…" },
       saved: {
         dot: "var(--green)",
-        text: hasPhone
-          ? "Saved. Your summary is on its way to WhatsApp."
-          : "Saved. Your result is recorded for the summit.",
+        text: "Saved. Your result is recorded for the summit.",
       },
       error: {
         dot: "var(--gold)",
