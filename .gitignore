@@ -47,3 +47,6 @@ yarn-error.log*
 
 # Source upload of the playbook (served copy lives in public/)
 /THE SECRET PLAYBOOK_FINAL 1.pdf
+
+# Generated event-links sheet (regenerate with scripts/gen-links-pdf.mjs)
+/Germany-Summit-Links.pdf
