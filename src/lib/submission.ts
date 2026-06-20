@@ -30,8 +30,19 @@ export type DimScores = Record<Dimension, number>;
 /** A point-in-time score, for re-analysis delta tracking. */
 export type ScoreSnapshot = { score: number; at: string };
 
-/** A Reality Check take, tagged with the event phase, for before/after lift. */
-export type ReadinessSnapshot = { score: number; session: string; at: string };
+/**
+ * A Reality Check take, tagged with the event phase, for before/after lift.
+ * `dimScores` + `answers` are captured per take (added later) so a true
+ * per-dimension / per-question before/after survives a retake overwriting the
+ * live row; older snapshots may omit them.
+ */
+export type ReadinessSnapshot = {
+  score: number;
+  session: string;
+  at: string;
+  dimScores?: DimScores;
+  answers?: Answers;
+};
 
 export type CvSubScores = {
   keywords: number; // 0..100 each

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { score } from "@/lib/scoring";
-import { encode, decodeSubmission, type Answers } from "@/lib/submission";
+import { encode, decodeSubmission, type Answers, type ReadinessSnapshot } from "@/lib/submission";
 import { fireN8n } from "@/lib/n8n";
 import { TOTAL_QUESTIONS } from "@/lib/questions";
 import { normalizePhone } from "@/lib/phone";
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
 
   // Retake gating: a completed Reality Check locks this person (by email OR
   // phone) unless the admin granted a retake or the global override is on.
-  const lock = await evaluateLock(email, phoneNorm);
+  const lock = await evaluateLock(email, phoneNorm, session);
   if (lock.taken && !lock.allowed) {
     return NextResponse.json(
       {
@@ -123,8 +123,25 @@ export async function POST(req: Request) {
   // show a true before/after lift (first take vs latest) across the day. Read the
   // prior history off the existing row, then cap the trail to the last 20 takes.
   const existing = await prisma.submission.findUnique({ where: { email } });
-  const priorHistory = existing ? decodeSubmission(existing).scoreHistory ?? [] : [];
-  const snapshot = { score: result.totalScore, session, at: new Date().toISOString() };
+  const decodedExisting = existing ? decodeSubmission(existing) : null;
+  const priorHistory = decodedExisting?.scoreHistory ?? [];
+
+  // Preserve the PREVIOUS take's full detail (dimensions + answers) before the
+  // live row is overwritten, so a true per-dimension / per-question before/after
+  // survives the retake. The existing row still reflects that previous take.
+  if (priorHistory.length && decodedExisting) {
+    const last = priorHistory[priorHistory.length - 1];
+    if (!last.answers && decodedExisting.answers) last.answers = decodedExisting.answers;
+    if (!last.dimScores && decodedExisting.dimScores) last.dimScores = decodedExisting.dimScores;
+  }
+
+  const snapshot: ReadinessSnapshot = {
+    score: result.totalScore,
+    session,
+    at: new Date().toISOString(),
+    dimScores: result.dimScores,
+    answers,
+  };
 
   // Only brand a weakest dimension / archetype when there's a real gap. For a
   // strong-across or evenly-matched result there is no single weakest, so the

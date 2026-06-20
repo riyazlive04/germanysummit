@@ -21,13 +21,14 @@ export type LockState = {
 export async function evaluateLock(
   email: string,
   phoneNorm: string | null,
+  session?: string,
 ): Promise<LockState> {
   const conflicts = await prisma.submission.findMany({
     where: {
       totalScore: { not: null },
       OR: [{ email }, ...(phoneNorm ? [{ phoneNorm }] : [])],
     },
-    select: { id: true, retakeAllowed: true },
+    select: { id: true, retakeAllowed: true, session: true },
   });
 
   if (conflicts.length === 0) {
@@ -35,10 +36,19 @@ export async function evaluateLock(
   }
 
   const config = await getAppConfig();
-  const allowed =
-    config.allowAllRetakes ||
-    config.eventDayMode ||
-    conflicts.some((c) => c.retakeAllowed);
+  const grantedRetake = conflicts.some((c) => c.retakeAllowed);
+
+  let allowed: boolean;
+  if (session === "end_of_day") {
+    // The end-of-day pulse is self-unlocking but STRICTLY once per person: the
+    // first end_of_day take is always allowed (no morning toggle needed), but a
+    // repeat is blocked unless an admin granted that specific person a retake.
+    // Global toggles do NOT loosen this - the room's before/after stays honest.
+    const alreadyEndOfDay = conflicts.some((c) => c.session === "end_of_day");
+    allowed = !alreadyEndOfDay || grantedRetake;
+  } else {
+    allowed = config.allowAllRetakes || config.eventDayMode || grantedRetake;
+  }
 
   return { taken: true, allowed, conflictIds: conflicts.map((c) => c.id) };
 }

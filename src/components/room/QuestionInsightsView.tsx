@@ -176,14 +176,8 @@ export default function QuestionInsightsView({ initialKey }: { initialKey?: stri
             </button>
           ))}
           <Link
-            href="/room/live"
-            className="ml-1 rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
-          >
-            Live answers →
-          </Link>
-          <Link
             href="/room/insights"
-            className="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
+            className="ml-1 rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
           >
             Insights →
           </Link>

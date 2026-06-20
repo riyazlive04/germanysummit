@@ -214,12 +214,6 @@ export default function LivePoll({
           ))}
           <span className="mx-1 h-4 w-px bg-[var(--line)]" />
           <Link
-            href="/room/live"
-            className="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold"
-          >
-            Live answers →
-          </Link>
-          <Link
             href="/room/insights"
             className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
           >
