@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { fireN8n } from "@/lib/n8n";
 import { normalizePhone } from "@/lib/phone";
+import { isValidPhone } from "@/lib/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,12 +88,22 @@ export async function POST(req: Request) {
     );
   }
 
+  const name = cleanText(body.name);
+  if (!name) {
+    return NextResponse.json({ ok: false, error: "Your name is required." }, { status: 400 });
+  }
+  const phoneRaw = cleanText(body.phone);
+  if (!isValidPhone(phoneRaw)) {
+    return NextResponse.json(
+      { ok: false, error: "A valid 10-digit WhatsApp number is required." },
+      { status: 400 },
+    );
+  }
+  const phone = phoneRaw!.slice(0, 32);
+  const phoneNorm = normalizePhone(phone);
+
   const valuable = cleanText(body.valuable);
   const improve = cleanText(body.improve);
-  const name = cleanText(body.name);
-  const phoneRaw = cleanText(body.phone);
-  const phone = phoneRaw ? phoneRaw.slice(0, 32) : undefined;
-  const phoneNorm = phone ? normalizePhone(phone) : undefined;
   const source = cleanText(body.source);
 
   let row;
@@ -103,11 +114,11 @@ export async function POST(req: Request) {
         rating,
         planStuck,
         guided,
+        name,
+        phone,
+        phoneNorm,
         ...(valuable ? { valuable } : {}),
         ...(improve ? { improve } : {}),
-        ...(name ? { name } : {}),
-        ...(phone ? { phone } : {}),
-        ...(phoneNorm ? { phoneNorm } : {}),
         ...(source ? { source } : {}),
       },
     });

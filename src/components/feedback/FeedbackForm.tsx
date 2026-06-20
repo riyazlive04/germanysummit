@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { isValidPhone } from "@/lib/validate";
 
 /**
  * /feedback - the closing "two-minute" survey, rebuilt from the Google Form as a
@@ -57,6 +58,8 @@ export default function FeedbackForm() {
     if (!planStuck) return fail("Tell us how long your Germany plan had been stuck.");
     if (!guided) return fail("Tell us about your Guided Mode decision.");
     if (rating === null) return fail("Give today's summit an overall rating.");
+    if (!name.trim()) return fail("Please enter your name.");
+    if (!isValidPhone(phone)) return fail("Enter a valid 10-digit WhatsApp number.");
 
     setBusy(true);
     setError(null);
@@ -123,24 +126,16 @@ export default function FeedbackForm() {
 
           <div className="mx-auto mt-8 max-w-md">
             <p className="text-sm text-[color:rgba(245,242,234,0.72)]">
-              Haven&apos;t joined Guided Mode yet? Talk to the team before you decide.
+              Still have questions before you decide? Talk to the team.
             </p>
-            <div className="mt-4 grid gap-3">
+            <div className="mt-4">
               <a
                 href="https://optin.b2consultants.de/apply"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-gold px-6 py-3.5 text-sm"
+                className="btn-gold block px-6 py-3.5 text-sm"
               >
-                Book a Guided Mode call →
-              </a>
-              <a
-                href="https://optin.b2consultants.de/sss"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-xl border border-[color:rgba(245,242,234,0.25)] px-6 py-3.5 text-sm text-on-anchor transition-colors hover:border-gold hover:text-gold"
-              >
-                Talk to Ameen - Solo Mode →
+                Book a call with B2 Consultants →
               </a>
             </div>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-[color:rgba(245,242,234,0.6)]">
@@ -245,10 +240,10 @@ export default function FeedbackForm() {
           />
         </Field>
 
-        {/* Optional follow-up */}
-        <Field n={7} label="Your name and WhatsApp number">
+        {/* Follow-up identity (required) */}
+        <Field n={7} required label="Your name and WhatsApp number">
           <p className="-mt-1 mb-3 text-xs text-muted">
-            Optional - only if you&apos;d like us to follow up with you personally.
+            So we know whose feedback this is and can follow up with you.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <input

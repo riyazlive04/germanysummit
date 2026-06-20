@@ -9,8 +9,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const GUIDED_URL = "https://optin.b2consultants.de/apply";
-const SOLO_URL = "https://optin.b2consultants.de/sss";
+const BOOK_URL = "https://optin.b2consultants.de/apply";
 
 export default function NextStepsPage() {
   return (
@@ -27,25 +26,17 @@ export default function NextStepsPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-[color:rgba(245,242,234,0.78)] sm:text-base">
             If you haven&apos;t joined Guided Mode yet but still have questions, book a
-            quick call with the team - or talk to Ameen directly about the solo path.
+            quick call with the team and we&apos;ll map your Germany plan together.
           </p>
 
-          <div className="mx-auto mt-9 grid max-w-md gap-3">
+          <div className="mx-auto mt-9 max-w-md">
             <a
-              href={GUIDED_URL}
+              href={BOOK_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-gold px-7 py-4 text-[15px]"
+              className="btn-gold block px-7 py-4 text-[15px]"
             >
-              Book a Guided Mode call →
-            </a>
-            <a
-              href={SOLO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl border border-[color:rgba(245,242,234,0.25)] px-7 py-4 text-[15px] text-on-anchor transition-colors hover:border-gold hover:text-gold"
-            >
-              Talk to Ameen - Solo Mode →
+              Book a call with B2 Consultants →
             </a>
           </div>
 
