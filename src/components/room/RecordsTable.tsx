@@ -370,6 +370,12 @@ export default function RecordsTable({ initialKey }: { initialKey?: string }) {
           >
             Feedback →
           </Link>
+          <Link
+            href="/room/compare"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Compare →
+          </Link>
           <button
             onClick={() => exportCsv(view)}
             disabled={busy || view.length === 0}

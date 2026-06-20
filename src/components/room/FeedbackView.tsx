@@ -210,6 +210,12 @@ export default function FeedbackView({ initialKey }: { initialKey?: string }) {
           >
             Feedback →
           </Link>
+          <Link
+            href="/room/compare"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Compare →
+          </Link>
         </div>
       </div>
 

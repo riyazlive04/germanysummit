@@ -6,7 +6,7 @@
  * on_arrival → end_of_day before/after shift. The app earns its place by doing
  * what paper can't - COMPUTE and AGGREGATE the room (CONTEXT.md §8.2).
  */
-import { DIMENSIONS, type DecodedSubmission, type DimScores } from "./submission";
+import { DIMENSIONS, type Answers, type DecodedSubmission, type DimScores } from "./submission";
 import { getTier, type Tier } from "./scoring";
 import { QUESTIONS } from "./questions";
 
@@ -104,6 +104,86 @@ export function computeLift(subs: DecodedSubmission[]): ScoreLift {
     topGain,
     phaseAverages,
   };
+}
+
+// ── Pre / post comparison ────────────────────────────────────────────────────
+
+/** One person's full Reality Check take for a given phase. */
+export type Take = { score: number; dimScores: DimScores | null; answers: Answers | null };
+
+/** A matched person who took the check both pre-event and end-of-day. */
+export type PersonDelta = {
+  id: string;
+  name: string | null;
+  email: string;
+  preScore: number;
+  postScore: number;
+  delta: number;
+  preDim: DimScores | null;
+  postDim: DimScores | null;
+};
+
+export type PrePost = {
+  preSubs: DecodedSubmission[]; // synthetic rows carrying each person's pre take
+  postSubs: DecodedSubmission[]; // synthetic rows carrying each person's post take
+  matched: PersonDelta[]; // people with BOTH takes, biggest gain first
+};
+
+/**
+ * The person's take for a phase, with full detail. Prefers the matching history
+ * snapshot; falls back to the live row when it's still tagged that phase (covers
+ * non-retakers and takes recorded before per-snapshot detail existed). Null when
+ * they have no take for that phase.
+ */
+export function takeForSession(s: DecodedSubmission, session: string): Take | null {
+  const snaps = (s.scoreHistory ?? []).filter((h) => h.session === session);
+  const snap = snaps.length ? snaps[snaps.length - 1] : null;
+  let score = snap?.score ?? null;
+  let dimScores = snap?.dimScores ?? null;
+  let answers = snap?.answers ?? null;
+  if (s.session === session) {
+    if (score == null && typeof s.totalScore === "number") score = s.totalScore;
+    dimScores = dimScores ?? s.dimScores;
+    answers = answers ?? s.answers;
+  }
+  if (score == null) return null;
+  return { score, dimScores, answers };
+}
+
+/** A synthetic submission whose scored fields reflect one specific take. */
+function asTake(s: DecodedSubmission, t: Take): DecodedSubmission {
+  return { ...s, totalScore: t.score, dimScores: t.dimScores, answers: t.answers, tier: getTier(t.score) };
+}
+
+/**
+ * Split the room into pre-event and end-of-day takes (per person), reusing the
+ * same `aggregate` / `answerDistribution` over each side, plus a matched
+ * per-person delta list for the people who did both.
+ */
+export function splitPrePost(subs: DecodedSubmission[]): PrePost {
+  const preSubs: DecodedSubmission[] = [];
+  const postSubs: DecodedSubmission[] = [];
+  const matched: PersonDelta[] = [];
+  for (const s of subs) {
+    const pre = takeForSession(s, "pre_event");
+    const post = takeForSession(s, "end_of_day");
+    if (pre) preSubs.push(asTake(s, pre));
+    if (post) postSubs.push(asTake(s, post));
+    if (pre && post) {
+      matched.push({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        preScore: pre.score,
+        postScore: post.score,
+        delta: post.score - pre.score,
+        preDim: pre.dimScores,
+        postDim: post.dimScores,
+      });
+    }
+  }
+  matched.sort((a, b) => b.delta - a.delta);
+  return { preSubs, postSubs, matched };
 }
 
 /**

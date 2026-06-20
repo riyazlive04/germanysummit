@@ -194,6 +194,12 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
           >
             Feedback →
           </Link>
+          <Link
+            href="/room/compare"
+            className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:text-gold"
+          >
+            Compare →
+          </Link>
         </div>
       </div>
 
@@ -283,7 +289,7 @@ export default function RoomDashboard({ initialKey }: { initialKey?: string }) {
           {/* Before / after (who is in each phase right now) */}
           {data && (
             <BeforeAfter
-              onArrival={data.bySession["on_arrival"]}
+              pre={data.bySession["pre_event"]}
               endOfDay={data.bySession["end_of_day"]}
             />
           )}
@@ -424,13 +430,13 @@ function Histogram({ distribution }: { distribution: number[] }) {
 }
 
 function BeforeAfter({
-  onArrival,
+  pre,
   endOfDay,
 }: {
-  onArrival?: Aggregate;
+  pre?: Aggregate;
   endOfDay?: Aggregate;
 }) {
-  const a = onArrival?.avgTotalScore ?? null;
+  const a = pre?.avgTotalScore ?? null;
   const b = endOfDay?.avgTotalScore ?? null;
   const delta = a != null && b != null ? b - a : null;
 
@@ -438,11 +444,13 @@ function BeforeAfter({
     <section className="card p-7">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-display text-lg">The room&apos;s shift</h3>
-        <span className="label-mono">on arrival → end of day</span>
+        <Link href="/room/compare" className="label-mono transition-colors hover:text-gold">
+          pre-event → end of day · full compare →
+        </Link>
       </div>
 
       <div className="mt-5 grid items-center gap-6 sm:grid-cols-[1fr_auto_1fr]">
-        <MiniSession title="On arrival" agg={onArrival} />
+        <MiniSession title="Pre-event" agg={pre} />
         <div className="text-center">
           <span className="label-mono">Δ readiness</span>
           <div
