@@ -22,7 +22,7 @@ export default function Footer() {
             href="https://sirahdigital.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-text underline-offset-2 transition-colors hover:text-gold"
+            className="font-medium text-gold underline-offset-2 transition-colors hover:text-gold-soft"
           >
             Sirah Digital
           </a>
