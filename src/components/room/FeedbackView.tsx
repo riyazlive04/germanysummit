@@ -183,6 +183,19 @@ export default function FeedbackView({ initialKey }: { initialKey?: string }) {
   const valuableNotes = rows.filter((r) => r.valuable);
   const improveNotes = rows.filter((r) => r.improve);
 
+  const summary: Summary = {
+    total,
+    nps,
+    promoters,
+    passives,
+    detractors,
+    avgRating,
+    avgNps: avg(npsValues),
+    enrolled,
+    planCounts,
+    guidedCounts,
+  };
+
   return (
     <div className="py-8">
       {/* Top bar */}
@@ -236,6 +249,36 @@ export default function FeedbackView({ initialKey }: { initialKey?: string }) {
             <Stat label="Avg rating" value={`${avgRating ?? "-"}`} hint="out of 10" />
             <Stat label="Avg NPS score" value={`${avg(npsValues) ?? "-"}`} hint="0-10 likelihood" />
             <Stat label="Enrolled" value={`${enrolled}`} hint="said yes to Guided" />
+          </div>
+
+          {/* Downloads */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="label-mono mr-1">Download</span>
+            <button
+              onClick={() => exportSummaryExcel(summary)}
+              className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:border-gold hover:text-gold"
+            >
+              Summary · Excel
+            </button>
+            <button
+              onClick={() => downloadSummaryPdf(summary)}
+              className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:border-gold hover:text-gold"
+            >
+              Summary · PDF
+            </button>
+            <span className="mx-1 h-4 w-px bg-[var(--line)]" />
+            <button
+              onClick={() => exportDetailsExcel(rows)}
+              className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:border-gold hover:text-gold"
+            >
+              Details · Excel
+            </button>
+            <button
+              onClick={() => downloadDetailsPdf(rows)}
+              className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-muted transition-colors hover:border-gold hover:text-gold"
+            >
+              Details · PDF
+            </button>
           </div>
 
           {/* NPS split */}
@@ -423,4 +466,359 @@ function Notes({
       )}
     </div>
   );
+}
+
+// ── Downloads ────────────────────────────────────────────────────────────────
+
+type Summary = {
+  total: number;
+  nps: number;
+  promoters: number;
+  passives: number;
+  detractors: number;
+  avgRating: number | null;
+  avgNps: number | null;
+  enrolled: number;
+  planCounts: { key: string; label: string; count: number }[];
+  guidedCounts: { key: string; label: string; count: number }[];
+};
+
+function escapeHtml(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function downloadBlob(content: BlobPart, type: string, filename: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Excel-native .xls from HTML tables (opens straight into Excel, no library). */
+function xlsWorkbook(tablesHtml: string): string {
+  return (
+    `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">` +
+    `<head><meta charset="utf-8"></head><body>${tablesHtml}</body></html>`
+  );
+}
+
+const pct = (n: number, total: number) => (total ? Math.round((n / total) * 100) : 0);
+
+/** Per-response detail workbook. */
+function exportDetailsExcel(rows: Feedback[]) {
+  const head = [
+    "When (IST)",
+    "Name",
+    "WhatsApp",
+    "NPS (0-10)",
+    "Rating (1-10)",
+    "Plan stuck",
+    "Guided decision",
+    "Most valuable",
+    "What could be better",
+  ];
+  const body = rows
+    .map((r) => {
+      const cells = [
+        formatISTDateTime(r.createdAt),
+        r.name,
+        r.phone,
+        r.nps,
+        r.rating,
+        PLAN_LABELS[r.planStuck] ?? r.planStuck,
+        GUIDED_LABELS[r.guided] ?? r.guided,
+        r.valuable ?? "",
+        r.improve ?? "",
+      ];
+      return `<tr>${cells.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`;
+    })
+    .join("");
+  const table =
+    `<table border="1"><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>` +
+    `<tbody>${body}</tbody></table>`;
+  downloadBlob(
+    "﻿" + xlsWorkbook(table),
+    "application/vnd.ms-excel;charset=utf-8;",
+    `feedback-details-${rows.length}.xls`,
+  );
+}
+
+/** Aggregate summary workbook. */
+function exportSummaryExcel(s: Summary) {
+  const metrics: [string, string | number][] = [
+    ["Total responses", s.total],
+    ["NPS (promoters - detractors)", s.nps > 0 ? `+${s.nps}` : s.nps],
+    ["Promoters (9-10)", s.promoters],
+    ["Passives (7-8)", s.passives],
+    ["Detractors (0-6)", s.detractors],
+    ["Average rating (1-10)", s.avgRating ?? "-"],
+    ["Average likelihood (0-10)", s.avgNps ?? "-"],
+    ["Enrolled in Guided", s.enrolled],
+  ];
+  const mRows = metrics
+    .map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
+    .join("");
+  const breakRows = (items: { label: string; count: number }[]) =>
+    items
+      .map(
+        (i) =>
+          `<tr><td>${escapeHtml(i.label)}</td><td>${i.count}</td><td>${pct(i.count, s.total)}%</td></tr>`,
+      )
+      .join("");
+  const tables =
+    `<h2>Feedback summary</h2>` +
+    `<table border="1"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${mRows}</tbody></table>` +
+    `<br/><h3>How long the plan had been stuck</h3>` +
+    `<table border="1"><thead><tr><th>Option</th><th>Count</th><th>Share</th></tr></thead><tbody>${breakRows(s.planCounts)}</tbody></table>` +
+    `<br/><h3>Guided Mode decision</h3>` +
+    `<table border="1"><thead><tr><th>Option</th><th>Count</th><th>Share</th></tr></thead><tbody>${breakRows(s.guidedCounts)}</tbody></table>`;
+  downloadBlob(
+    "﻿" + xlsWorkbook(tables),
+    "application/vnd.ms-excel;charset=utf-8;",
+    `feedback-summary.xls`,
+  );
+}
+
+const PDF = {
+  DARK: [26, 26, 26] as readonly number[],
+  MUTED: [110, 110, 110] as readonly number[],
+  GOLD: [193, 142, 43] as readonly number[],
+  GREEN: [42, 145, 95] as readonly number[],
+  RED: [200, 60, 45] as readonly number[],
+  TRACK: [235, 232, 224] as readonly number[],
+  SURF: [250, 247, 240] as readonly number[],
+  ANCHOR: [15, 61, 46] as readonly number[],
+};
+
+/** Branded summary report PDF. */
+async function downloadSummaryPdf(s: Summary) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const M = 15;
+  const W = 180;
+  const tc = (c: readonly number[]) => doc.setTextColor(c[0], c[1], c[2]);
+  const fc = (c: readonly number[]) => doc.setFillColor(c[0], c[1], c[2]);
+
+  // Header band
+  fc(PDF.ANCHOR);
+  doc.rect(0, 0, 210, 26, "F");
+  tc([245, 242, 234]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Germany Career Summit 2026", M, 13);
+  tc(PDF.GOLD);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Feedback summary", M, 20);
+
+  let y = 36;
+
+  // Headline stat cards
+  const cardW = (W - 8) / 3;
+  const stat = (i: number, label: string, value: string, sub: string, color = PDF.DARK) => {
+    const x = M + i * (cardW + 4);
+    fc(PDF.SURF);
+    doc.roundedRect(x, y, cardW, 24, 2, 2, "F");
+    tc(PDF.MUTED);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(label.toUpperCase(), x + 5, y + 7);
+    tc(color);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text(value, x + 5, y + 17);
+    tc(PDF.MUTED);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(sub, x + 5, y + 22);
+  };
+  stat(0, "NPS", s.nps > 0 ? `+${s.nps}` : `${s.nps}`, `${s.promoters} prom / ${s.detractors} detr`, PDF.GOLD);
+  stat(1, "Avg rating", `${s.avgRating ?? "-"} / 10`, `${s.total} responses`);
+  stat(2, "Enrolled", `${s.enrolled}`, "said yes to Guided");
+  y += 34;
+
+  const heading = (t: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    tc(PDF.DARK);
+    doc.text(t, M, y);
+    y += 1.5;
+    doc.setDrawColor(PDF.GOLD[0], PDF.GOLD[1], PDF.GOLD[2]);
+    doc.setLineWidth(0.5);
+    doc.line(M, y, M + 22, y);
+    y += 6;
+  };
+  const bar = (label: string, count: number, color: readonly number[]) => {
+    const p = pct(count, s.total);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    tc(PDF.DARK);
+    doc.text(label, M, y);
+    tc(PDF.MUTED);
+    doc.text(`${count}  (${p}%)`, M + W, y, { align: "right" });
+    y += 2;
+    fc(PDF.TRACK);
+    doc.roundedRect(M, y, W, 2.6, 1.3, 1.3, "F");
+    fc(color);
+    if (p > 0) doc.roundedRect(M, y, (W * p) / 100, 2.6, 1.3, 1.3, "F");
+    y += 7;
+  };
+
+  heading("Recommendation split");
+  bar(`Promoters (9-10)`, s.promoters, PDF.GREEN);
+  bar(`Passives (7-8)`, s.passives, PDF.GOLD);
+  bar(`Detractors (0-6)`, s.detractors, PDF.RED);
+  y += 3;
+
+  heading("How long the plan had been stuck");
+  s.planCounts.forEach((p) => bar(p.label, p.count, PDF.GOLD));
+  y += 3;
+
+  heading("Guided Mode decision");
+  const gColor: Record<string, readonly number[]> = {
+    enrolled: PDF.GREEN,
+    interested: PDF.GOLD,
+    need_time: [201, 138, 17],
+    not_for_me: PDF.RED,
+  };
+  s.guidedCounts.forEach((g) => bar(g.label, g.count, gColor[g.key] ?? PDF.GOLD));
+
+  tc(PDF.MUTED);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("Developed by Sirah Digital · sirahdigital.in", M, 288);
+
+  doc.save(`feedback-summary.pdf`);
+}
+
+const clip = (v: unknown, n: number) => {
+  const s = String(v ?? "");
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+};
+
+/** Per-response detail PDF: a compact table + a comments appendix. */
+async function downloadDetailsPdf(rows: Feedback[]) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const M = 15;
+  const PAGE_H = 297;
+  const tc = (c: readonly number[]) => doc.setTextColor(c[0], c[1], c[2]);
+
+  // Columns: x positions / widths (mm)
+  const cols: { key: string; x: number; w: number; align?: "center" }[] = [
+    { key: "Name", x: 15, w: 40 },
+    { key: "WhatsApp", x: 55, w: 26 },
+    { key: "NPS", x: 81, w: 13, align: "center" },
+    { key: "Rating", x: 94, w: 15, align: "center" },
+    { key: "Guided", x: 109, w: 46 },
+    { key: "When (IST)", x: 155, w: 40 },
+  ];
+
+  let y = 0;
+  const drawHeader = () => {
+    doc.setFillColor(PDF.ANCHOR[0], PDF.ANCHOR[1], PDF.ANCHOR[2]);
+    doc.rect(0, 0, 210, 20, "F");
+    tc([245, 242, 234]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("Feedback — individual responses", M, 9);
+    tc(PDF.GOLD);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`${rows.length} responses · Germany Career Summit 2026`, M, 15);
+    y = 27;
+    // column headers
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    tc(PDF.MUTED);
+    cols.forEach((c) =>
+      doc.text(c.key.toUpperCase(), c.align === "center" ? c.x + c.w / 2 : c.x, y, {
+        align: c.align === "center" ? "center" : "left",
+      }),
+    );
+    y += 2;
+    doc.setDrawColor(220, 217, 209);
+    doc.line(M, y, 195, y);
+    y += 4.5;
+  };
+
+  drawHeader();
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+
+  rows.forEach((r) => {
+    if (y > PAGE_H - 18) {
+      doc.addPage();
+      drawHeader();
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+    }
+    const vals: Record<string, string> = {
+      Name: clip(r.name, 26),
+      WhatsApp: clip(r.phone, 16),
+      NPS: String(r.nps),
+      Rating: String(r.rating),
+      Guided: clip(GUIDED_LABELS[r.guided] ?? r.guided, 28),
+      "When (IST)": clip(formatISTDateTime(r.createdAt), 26),
+    };
+    tc(PDF.DARK);
+    cols.forEach((c) =>
+      doc.text(vals[c.key], c.align === "center" ? c.x + c.w / 2 : c.x, y, {
+        align: c.align === "center" ? "center" : "left",
+      }),
+    );
+    y += 5.2;
+    doc.setDrawColor(238, 236, 230);
+    doc.line(M, y - 1.6, 195, y - 1.6);
+  });
+
+  // Comments appendix
+  const withNotes = rows.filter((r) => r.valuable || r.improve);
+  if (withNotes.length) {
+    doc.addPage();
+    y = 16;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    tc(PDF.DARK);
+    doc.text("Comments", M, y);
+    y += 8;
+    withNotes.forEach((r) => {
+      const block: string[] = [];
+      if (r.valuable) block.push(`+ Valuable: ${r.valuable}`);
+      if (r.improve) block.push(`- Better: ${r.improve}`);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      tc(PDF.DARK);
+      const lines: string[] = [];
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      for (const b of block) for (const ln of doc.splitTextToSize(b, 180)) lines.push(ln);
+      if (y + 6 + lines.length * 4.4 > PAGE_H - M) {
+        doc.addPage();
+        y = 16;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      tc(PDF.GOLD);
+      doc.text(`${r.name || "—"} · NPS ${r.nps} · ${r.rating}/10`, M, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      tc(PDF.DARK);
+      for (const ln of lines) {
+        doc.text(ln, M, y);
+        y += 4.4;
+      }
+      y += 3;
+    });
+  }
+
+  doc.save(`feedback-details-${rows.length}.pdf`);
 }
